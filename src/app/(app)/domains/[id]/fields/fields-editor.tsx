@@ -10,11 +10,12 @@ import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Plus, ChevronDown, ChevronRight, Trash2, GripVertical,
-  Hash, Type, List, ToggleLeft, Calculator, Cpu, Save, AlertCircle, Search, X
+  Hash, Type, List, ToggleLeft, Calculator, Cpu, Save, AlertCircle, Search, X, AlertTriangle, Wand2
 } from "lucide-react";
 import type { DomainConfig, Datenfeld, FeldTyp } from "@/types/domain";
 import { cn } from "@/lib/utils";
 import { FormulaInput } from "@/components/ui/formula-input";
+import { detectFormulaOrderIssues, fixFormulaOrder } from "@/lib/validate-fields";
 
 const UNIT_PRESETS = ["m", "m²", "m³", "cm", "mm", "km", "kg", "g", "t", "l", "ml", "Stk", "Paar", "Stg", "h", "min", "kW", "kWh", "kN", "N", "%", "€", "°C"];
 
@@ -52,9 +53,10 @@ interface FieldCardProps {
   allFields: Datenfeld[];
   onChange: (f: Datenfeld) => void;
   onDelete: () => void;
+  orderIssues?: string[];
 }
 
-function FieldCard({ field, allFields, onChange, onDelete }: FieldCardProps) {
+function FieldCard({ field, allFields, onChange, onDelete, orderIssues }: FieldCardProps) {
   const allKeys = allFields.map((f) => f.key);
   const [open, setOpen] = useState(!field.key);
   const [keyManuallyEdited, setKeyManuallyEdited] = useState(!!field.key);
@@ -219,6 +221,19 @@ function FieldCard({ field, allFields, onChange, onDelete }: FieldCardProps) {
                   fields={allFields.filter((f) => f.key !== field.key)}
                   placeholder="z.B. laenge * breite"
                 />
+                {orderIssues && orderIssues.length > 0 && (
+                  <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
+                    <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-amber-600" />
+                    <div className="text-amber-800">
+                      <p className="font-medium">Berechnungsreihenfolge</p>
+                      <p className="mt-0.5 text-amber-700">
+                        {orderIssues.length === 1
+                          ? `„${orderIssues[0]}" wird erst nach diesem Feld berechnet — das Ergebnis kann falsch sein.`
+                          : `${orderIssues.map((k) => `„${k}"`).join(", ")} werden erst nach diesem Feld berechnet — das Ergebnis kann falsch sein.`}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -393,6 +408,19 @@ export function FieldsEditor({ domainId, initialConfig }: FieldsEditorProps) {
   const hasErrors = config.felder.some((f) => !f.key || !f.label || validateKey(f.key)) ||
     allKeys.filter((k, i) => allKeys.indexOf(k) !== i).length > 0;
 
+  const formulaIssues = detectFormulaOrderIssues(config.felder);
+  const issuesByKey = new Map<string, string[]>();
+  for (const issue of formulaIssues) {
+    if (!issuesByKey.has(issue.fieldKey)) issuesByKey.set(issue.fieldKey, []);
+    issuesByKey.get(issue.fieldKey)!.push(issue.dependsOn);
+  }
+  const affectedCount = issuesByKey.size;
+
+  function applyFormulaFix() {
+    setConfig((prev) => ({ ...prev, felder: fixFormulaOrder(prev.felder) }));
+    setSaved(false);
+  }
+
   const q = search.trim().toLowerCase();
   const filteredIndices = config.felder
     .map((f, i) => ({ f, i }))
@@ -444,6 +472,30 @@ export function FieldsEditor({ domainId, initialConfig }: FieldsEditorProps) {
         </div>
       </div>
 
+      {affectedCount > 0 && !q && (
+        <div className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
+          <p className="flex-1 text-sm text-amber-800">
+            <span className="font-medium">
+              {affectedCount === 1
+                ? "1 Berechnungsfeld referenziert"
+                : `${affectedCount} Berechnungsfelder referenzieren`}{" "}
+              ein Feld, das noch nicht berechnet wurde.
+            </span>{" "}
+            Das Ergebnis kann falsch sein.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="shrink-0 border-amber-300 text-amber-800 hover:bg-amber-100 hover:text-amber-900"
+            onClick={applyFormulaFix}
+          >
+            <Wand2 className="h-3.5 w-3.5" />
+            Reihenfolge korrigieren
+          </Button>
+        </div>
+      )}
+
       {config.felder.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed py-16 text-center">
           <p className="text-sm text-muted-foreground mb-4">
@@ -476,6 +528,7 @@ export function FieldsEditor({ domainId, initialConfig }: FieldsEditorProps) {
                 allFields={config.felder}
                 onChange={(updated) => updateField(i, updated)}
                 onDelete={() => deleteField(i)}
+                orderIssues={issuesByKey.get(f.key)}
               />
             ))
           )}
