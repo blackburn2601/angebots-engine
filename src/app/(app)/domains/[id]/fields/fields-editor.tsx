@@ -456,19 +456,29 @@ export function FieldsEditor({ domainId, initialConfig }: FieldsEditorProps) {
         </div>
       ) : (
         <div className="space-y-3">
-          <Button variant="outline" onClick={addField} className="w-full">
-            <Plus className="h-4 w-4" />
-            Weiteres Feld hinzufügen
-          </Button>
-          {config.felder.map((field, i) => (
-            <FieldCard
-              key={i}
-              field={field}
-              allFields={config.felder}
-              onChange={(f) => updateField(i, f)}
-              onDelete={() => deleteField(i)}
-            />
-          ))}
+          {!q && (
+            <Button variant="outline" onClick={addField} className="w-full">
+              <Plus className="h-4 w-4" />
+              Weiteres Feld hinzufügen
+            </Button>
+          )}
+          {filteredIndices.length === 0 && q ? (
+            <div className="rounded-xl border-2 border-dashed py-10 text-center">
+              <p className="text-sm text-muted-foreground">
+                Keine Felder für „{search}" gefunden.
+              </p>
+            </div>
+          ) : (
+            filteredIndices.map(({ f, i }) => (
+              <FieldCard
+                key={i}
+                field={f}
+                allFields={config.felder}
+                onChange={(updated) => updateField(i, updated)}
+                onDelete={() => deleteField(i)}
+              />
+            ))
+          )}
         </div>
       )}
     </div>
