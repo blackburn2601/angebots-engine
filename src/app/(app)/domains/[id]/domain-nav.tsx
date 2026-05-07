@@ -33,7 +33,7 @@ export function DomainNav({ domainId, domainName }: DomainNavProps) {
         <ChevronRight className="h-3.5 w-3.5" />
         <span className="font-medium text-foreground">{domainName}</span>
       </div>
-      <nav className="flex gap-0 px-6 pt-3">
+      <nav className="flex gap-0 px-6 pt-3 overflow-x-auto scrollbar-hide">
         {tabs.map((tab) => {
           const active = pathname === tab.href || pathname.startsWith(tab.href + "/");
           return (

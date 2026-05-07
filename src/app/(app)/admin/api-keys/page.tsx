@@ -28,7 +28,8 @@ export default async function ApiKeysPage() {
         </div>
       ) : (
         <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[560px]">
             <thead className="border-b bg-muted/30">
               <tr>
                 <th className="p-3 text-left font-medium text-muted-foreground">Label</th>
@@ -60,6 +61,7 @@ export default async function ApiKeysPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>
