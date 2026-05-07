@@ -12,6 +12,12 @@ const webhookSchema = z.object({
 
 export async function GET() {
   await requireRole("SUPER_ADMIN", "DOMAIN_ADMIN");
+  
+  const hasWebhookUrl = (prisma.webhookUrl as any)?.findMany ? true : false;
+  if (!hasWebhookUrl) {
+    return NextResponse.json([]);
+  }
+  
   const webhooks = await prisma.webhookUrl.findMany({
     orderBy: { erstellt_am: "desc" },
   });
@@ -20,6 +26,12 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   await requireRole("SUPER_ADMIN", "DOMAIN_ADMIN");
+  
+  const hasWebhookUrl = (prisma.webhookUrl as any)?.create ? true : false;
+  if (!hasWebhookUrl) {
+    return NextResponse.json({ error: "WebhookUrl model not initialized" }, { status: 503 });
+  }
+  
   const body = await req.json();
   const parsed = webhookSchema.safeParse(body);
   if (!parsed.success) {

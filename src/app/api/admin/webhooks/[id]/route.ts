@@ -12,6 +12,12 @@ const patchSchema = z.object({
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   await requireRole("SUPER_ADMIN", "DOMAIN_ADMIN");
+  
+  const hasWebhookUrl = (prisma.webhookUrl as any)?.update ? true : false;
+  if (!hasWebhookUrl) {
+    return NextResponse.json({ error: "WebhookUrl model not initialized" }, { status: 503 });
+  }
+  
   const { id } = await params;
   const body = await req.json();
   const parsed = patchSchema.safeParse(body);
@@ -27,6 +33,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   await requireRole("SUPER_ADMIN", "DOMAIN_ADMIN");
+  
+  const hasWebhookUrl = (prisma.webhookUrl as any)?.delete ? true : false;
+  if (!hasWebhookUrl) {
+    return NextResponse.json({ error: "WebhookUrl model not initialized" }, { status: 503 });
+  }
+  
   const { id } = await params;
   await prisma.webhookUrl.delete({ where: { id } });
   return NextResponse.json({ ok: true });

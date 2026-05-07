@@ -96,8 +96,15 @@ export default function AdminLogsPage() {
     });
     try {
       const res = await fetch(`/api/admin/logs?${params}`);
+      if (!res.ok) {
+        setData({ logs: [], total: 0, page, limit: 50 });
+        return;
+      }
       const json = await res.json();
-      setData(json);
+      setData(json || { logs: [], total: 0, page, limit: 50 });
+    } catch (error) {
+      console.error('Error fetching logs:', error);
+      setData({ logs: [], total: 0, page, limit: 50 });
     } finally {
       setLoading(false);
     }

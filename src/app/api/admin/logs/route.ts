@@ -18,15 +18,23 @@ export async function GET(req: NextRequest) {
     ...(pathFilter ? { path: { contains: pathFilter } } : {}),
   };
 
-  const [logs, total] = await Promise.all([
-    prisma.apiLog.findMany({
-      where,
-      orderBy: { zeitstempel: "desc" },
-      skip: (page - 1) * limit,
-      take: limit,
-    }),
-    prisma.apiLog.count({ where }),
-  ]);
+  // Fallback if apiLog model doesn't exist yet
+  const hasApiLog = (prisma.apiLog as any)?.findMany ? true : false;
+  
+  let logs: any[] = [];
+  let total = 0;
+  
+  if (hasApiLog) {
+    [logs, total] = await Promise.all([
+      prisma.apiLog.findMany({
+        where,
+        orderBy: { zeitstempel: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.apiLog.count({ where }),
+    ]);
+  }
 
   return NextResponse.json({ logs, total, page, limit });
 }
@@ -36,6 +44,11 @@ export async function DELETE(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
+
+  const hasApiLog = (prisma.apiLog as any)?.delete ? true : false;
+  if (!hasApiLog) {
+    return NextResponse.json({ ok: false, error: "ApiLog model not initialized" }, { status: 503 });
+  }
 
   if (id) {
     await prisma.apiLog.delete({ where: { id } });
