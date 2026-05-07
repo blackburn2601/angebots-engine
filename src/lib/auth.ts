@@ -4,6 +4,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { checkRateLimit, recordLoginAttempt } from "@/lib/rate-limit";
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -20,23 +21,37 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { type: "email" },
         password: { type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         const parsed = loginSchema.safeParse(credentials);
         if (!parsed.success) return null;
+
+        const ip =
+          request?.headers?.get("x-forwarded-for")?.split(",")[0].trim() ??
+          request?.headers?.get("x-real-ip") ??
+          "unknown";
+
+        const rateCheck = await checkRateLimit(ip);
+        if (!rateCheck.allowed) return null;
 
         const user = await prisma.user.findUnique({
           where: { email: parsed.data.email },
         });
 
-        if (!user || !user.aktiv) return null;
+        if (!user || !user.aktiv) {
+          await recordLoginAttempt(ip, parsed.data.email, false);
+          return null;
+        }
 
         const valid = await bcrypt.compare(parsed.data.password, user.password);
-        if (!valid) return null;
+        if (!valid) {
+          await recordLoginAttempt(ip, parsed.data.email, false);
+          return null;
+        }
 
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { letzter_login: new Date() },
-        });
+        await Promise.all([
+          prisma.user.update({ where: { id: user.id }, data: { letzter_login: new Date() } }),
+          recordLoginAttempt(ip, parsed.data.email, true),
+        ]);
 
         return {
           id: user.id,

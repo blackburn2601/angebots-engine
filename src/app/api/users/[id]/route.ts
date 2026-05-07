@@ -30,14 +30,17 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Ungültige Eingabe" }, { status: 400 });
 
+  // Privilege escalation guard: sensitive fields require SUPER_ADMIN even on self-update
+  if (sessionRolle !== "SUPER_ADMIN") {
+    if (parsed.data.rolle !== undefined || parsed.data.aktiv !== undefined || parsed.data.muss_pw_aendern !== undefined) {
+      return NextResponse.json({ error: "Keine Berechtigung" }, { status: 403 });
+    }
+  }
+
   const data: Record<string, unknown> = { ...parsed.data };
   if (parsed.data.password) {
     data.password = await bcrypt.hash(parsed.data.password, 12);
     data.muss_pw_aendern = false;
-    delete data.password;
-    // actually keep the hash
-    const hash = await bcrypt.hash(parsed.data.password, 12);
-    (data as { password?: string }).password = hash;
   }
 
   const user = await prisma.user.update({ where: { id }, data });

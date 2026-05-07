@@ -5,14 +5,32 @@ import type {
 
 type FieldValues = Record<string, unknown>;
 
+function isSafeFormula(formel: string, allowedKeys: string[]): boolean {
+  let s = formel;
+  s = s.replace(/\bMath\.(round|floor|ceil|min|max|abs|pow|sqrt)\b/g, "");
+  for (const key of allowedKeys) {
+    s = s.replace(new RegExp(`\\b${key}\\b`, "g"), "");
+  }
+  s = s.replace(/\b\d+(\.\d+)?\b/g, "");
+  s = s.replace(/[\s+\-*/().,]/g, "");
+  return s.length === 0;
+}
+
 function evaluateFormula(formel: string, values: FieldValues): number {
+  const numericValues: Record<string, number> = {};
+  for (const [k, v] of Object.entries(values)) {
+    numericValues[k] = typeof v === "number" ? v : Number(v) || 0;
+  }
+  const keys = Object.keys(numericValues);
+
+  if (!isSafeFormula(formel, keys)) return 0;
+
   try {
-    const keys = Object.keys(values);
-    const vals = keys.map((k) => values[k]);
+    const vals = keys.map((k) => numericValues[k]);
     // eslint-disable-next-line no-new-func
     const fn = new Function(...keys, `"use strict"; return (${formel});`);
     const result = fn(...vals);
-    return typeof result === "number" ? result : 0;
+    return typeof result === "number" && isFinite(result) ? result : 0;
   } catch {
     return 0;
   }

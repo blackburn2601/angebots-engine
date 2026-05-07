@@ -23,6 +23,14 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
   const { domainIds, ...rest } = parsed.data;
 
+  if (rest.items_json !== undefined) {
+    try {
+      JSON.parse(rest.items_json);
+    } catch {
+      return NextResponse.json({ error: "Ungültiges JSON in items_json" }, { status: 400 });
+    }
+  }
+
   await prisma.$transaction(async (tx) => {
     if (Object.keys(rest).length > 0) {
       await tx.pricelist.update({ where: { id }, data: rest });
