@@ -127,7 +127,7 @@ function FieldCard({ field, allFields, onChange, onDelete, orderIssues, isDragOv
 
         <CollapsibleContent>
           <div className="border-t p-4 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Bezeichnung</Label>
                 <Input
@@ -179,7 +179,7 @@ function FieldCard({ field, allFields, onChange, onDelete, orderIssues, isDragOv
             </div>
 
             {(field.typ === "number" || field.typ === "formula" || field.typ === "output") && (
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-1.5">
                   <Label>Einheit</Label>
                   <Select
@@ -310,7 +310,7 @@ function FieldCard({ field, allFields, onChange, onDelete, orderIssues, isDragOv
             )}
 
             {["number", "text", "select", "boolean"].includes(field.typ) && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label>Standardwert</Label>
                   {field.typ === "boolean" ? (
@@ -479,7 +479,7 @@ export function FieldsEditor({ domainId, initialConfig }: FieldsEditorProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Search */}
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />

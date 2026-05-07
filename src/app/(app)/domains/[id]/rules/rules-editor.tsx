@@ -55,7 +55,7 @@ function ConditionRow({ condition, fields, onChange, onDelete }: ConditionRowPro
   const ops = getOpsForField(selectedField);
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <Select value={condition.feld} onValueChange={(v) => {
         const f = fields.find((f) => f.key === v);
         onChange({ ...condition, feld: v, wert: f?.typ === "boolean" ? true : undefined });
@@ -470,7 +470,7 @@ export function RulesEditor({ domainId, initialConfig }: RulesEditorProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div />
         <div className="flex items-center gap-2">
           {error && <span className="text-sm text-destructive">{error}</span>}

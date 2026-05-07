@@ -163,7 +163,7 @@ export function SimulatorClient({ config, pricelists }: SimulatorClientProps) {
           {config.felder.filter((f) => ["formula", "output"].includes(f.typ)).length === 0 ? (
             <p className="text-xs text-muted-foreground">Keine berechneten Felder</p>
           ) : (
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {config.felder.filter((f) => ["formula", "output"].includes(f.typ)).map((f) => {
                 const v = result.values[f.key];
                 const fired = result.firedRules.find((r) => r.ziel_feld === f.key);

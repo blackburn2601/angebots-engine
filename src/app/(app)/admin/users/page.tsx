@@ -27,7 +27,8 @@ export default async function UsersPage() {
       </div>
 
       <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[600px]">
           <thead className="border-b bg-muted/30">
             <tr>
               <th className="p-3 text-left font-medium text-muted-foreground">Name</th>
@@ -61,6 +62,7 @@ export default async function UsersPage() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
