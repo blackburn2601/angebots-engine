@@ -8,10 +8,10 @@ export default async function DomainLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   await requireRole("SUPER_ADMIN", "DOMAIN_ADMIN", "SELLER");
-  const { id } = params;
+  const { id } = await params;
 
   const domain = await prisma.domain.findUnique({ where: { id } });
   if (!domain) notFound();

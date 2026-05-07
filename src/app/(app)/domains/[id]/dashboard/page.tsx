@@ -106,9 +106,9 @@ function buildHealthCheck(config: DomainConfig, pricelistCount: number): CheckIt
   return checks;
 }
 
-export default async function DomainDashboardPage({ params }: { params: { id: string } }) {
+export default async function DomainDashboardPage({ params }: { params: Promise<{ id: string }> }) {
   await requireRole("SUPER_ADMIN", "DOMAIN_ADMIN", "SELLER");
-  const { id } = params;
+  const { id } = await params;
 
   const domain = await prisma.domain.findUnique({
     where: { id },

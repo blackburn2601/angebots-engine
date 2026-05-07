@@ -4,9 +4,9 @@ import { notFound } from "next/navigation";
 import { PricelistEditor } from "./pricelist-editor";
 import type { PreisItem } from "@/types/domain";
 
-export default async function PricelistPage({ params }: { params: { id: string } }) {
+export default async function PricelistPage({ params }: { params: Promise<{ id: string }> }) {
   await requireRole("SUPER_ADMIN", "DOMAIN_ADMIN");
-  const { id } = params;
+  const { id } = await params;
 
   const pricelist = await prisma.pricelist.findUnique({
     where: { id },

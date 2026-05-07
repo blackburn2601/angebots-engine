@@ -4,9 +4,9 @@ import { notFound } from "next/navigation";
 import { SimulatorClient } from "./simulator-client";
 import type { DomainConfig } from "@/types/domain";
 
-export default async function SimulatorPage({ params }: { params: { id: string } }) {
+export default async function SimulatorPage({ params }: { params: Promise<{ id: string }> }) {
   await requireRole("SUPER_ADMIN", "DOMAIN_ADMIN", "SELLER");
-  const { id } = params;
+  const { id } = await params;
 
   const domain = await prisma.domain.findUnique({
     where: { id },

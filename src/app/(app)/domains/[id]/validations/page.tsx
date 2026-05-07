@@ -4,9 +4,9 @@ import { notFound } from "next/navigation";
 import { ValidationsEditor } from "./validations-editor";
 import type { DomainConfig } from "@/types/domain";
 
-export default async function ValidationsPage({ params }: { params: { id: string } }) {
+export default async function ValidationsPage({ params }: { params: Promise<{ id: string }> }) {
   await requireRole("SUPER_ADMIN", "DOMAIN_ADMIN");
-  const { id } = params;
+  const { id } = await params;
 
   const domain = await prisma.domain.findUnique({ where: { id } });
   if (!domain) notFound();

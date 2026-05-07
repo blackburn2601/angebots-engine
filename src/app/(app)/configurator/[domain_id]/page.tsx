@@ -4,9 +4,9 @@ import { notFound } from "next/navigation";
 import { ConfiguratorClient } from "./configurator-client";
 import type { DomainConfig, PreisItem } from "@/types/domain";
 
-export default async function ConfiguratorPage({ params }: { params: { domain_id: string } }) {
+export default async function ConfiguratorPage({ params }: { params: Promise<{ domain_id: string }> }) {
   await requireAuth();
-  const { domain_id } = params;
+  const { domain_id } = await params;
 
   const domain = await prisma.domain.findUnique({
     where: { id: domain_id },

@@ -4,9 +4,9 @@ import { notFound } from "next/navigation";
 import { ComponentsEditor } from "./components-editor";
 import type { DomainConfig } from "@/types/domain";
 
-export default async function ComponentsPage({ params }: { params: { id: string } }) {
+export default async function ComponentsPage({ params }: { params: Promise<{ id: string }> }) {
   await requireRole("SUPER_ADMIN", "DOMAIN_ADMIN");
-  const { id } = params;
+  const { id } = await params;
 
   const domain = await prisma.domain.findUnique({
     where: { id },

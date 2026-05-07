@@ -12,13 +12,13 @@ const updateSchema = z.object({
   password: z.string().min(8).optional(),
 });
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Nicht angemeldet" }, { status: 401 });
   const sessionRolle = (session.user as { rolle: string }).rolle;
   const sessionId = session.user.id;
 
-  const { id } = params;
+  const { id } = await params;
 
   // Users can update their own password; super admin can update anyone
   const isSelf = sessionId === id;
