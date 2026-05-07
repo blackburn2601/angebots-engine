@@ -5,12 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import type { UserRolle } from "@/lib/auth-helpers";
+import { Input } from "@/components/ui/input";
 import {
   BookOpen, LayoutGrid, FileText, Sliders, ShieldAlert, Package,
   ListChecks, PlayCircle, ShoppingCart, Key, Users, Zap,
   ArrowRight, CheckCircle2, XCircle, AlertTriangle, Code2,
   Hash, Type, ToggleLeft, List, FunctionSquare, Calculator,
-  GripVertical, ChevronRight, Info, Layers, Globe, Lock,
+  GripVertical, ChevronRight, Info, Layers, Globe, Lock, Search, X,
 } from "lucide-react";
 
 interface DocsClientProps {
@@ -127,8 +128,25 @@ const sections = [
   { id: "api", label: "API & Integration", icon: Globe },
 ];
 
+// Keywords for each section used in search
+const SECTION_KEYWORDS: Record<string, string[]> = {
+  overview: ["überblick", "einführung", "architektur", "was ist"],
+  roles: ["rollen", "berechtigungen", "rechte", "super admin", "domain admin", "verkäufer"],
+  domains: ["domänen", "domain", "konfiguration", "bereiche", "duplizieren"],
+  fields: ["felder", "typen", "formel", "ausgabe", "zahl", "text", "select", "boolean", "formula", "output"],
+  form: ["formular", "sichtbarkeit", "pflichtfeld", "eingabe", "bedingung"],
+  rules: ["regelwerk", "regeln", "berechnung", "wenn", "condition", "automatisch"],
+  validations: ["validierungen", "fehler", "warnung", "prüfung", "error"],
+  components: ["komponenten", "artikel", "kalkulation", "menge", "varianten"],
+  pricelists: ["preislisten", "preis", "artikel", "einkaufspreis", "csv"],
+  simulator: ["simulator", "test", "live", "eingaben", "berechnung prüfen"],
+  configurator: ["konfigurator", "verkäufer", "angebot", "export"],
+  api: ["api", "integration", "rest", "endpunkt", "auth", "key", "bearer"],
+};
+
 export function DocsClient({ userRolle }: DocsClientProps) {
   const [active, setActive] = useState("overview");
+  const [searchQuery, setSearchQuery] = useState("");
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
@@ -147,19 +165,49 @@ export function DocsClient({ userRolle }: DocsClientProps) {
     return () => observerRef.current?.disconnect();
   }, []);
 
+  // Filter sections by search query
+  const filteredSections = searchQuery.trim()
+    ? sections.filter(({ id, label }) => {
+        const q = searchQuery.toLowerCase();
+        if (label.toLowerCase().includes(q)) return true;
+        const keywords = SECTION_KEYWORDS[id] ?? [];
+        return keywords.some((kw) => kw.includes(q) || q.includes(kw.substring(0, 4)));
+      })
+    : sections;
+
   return (
     <div className="flex min-h-screen">
       {/* Sticky sidebar nav */}
       <aside className="hidden lg:block w-56 shrink-0 sticky top-0 h-screen border-r bg-card overflow-y-auto py-6">
+        {/* Search bar */}
+        <div className="px-2 mb-4">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              className="pl-8 pr-7 h-8 text-xs"
+              placeholder="Suchen…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button
+                className="absolute right-2 top-2 text-muted-foreground hover:text-foreground"
+                onClick={() => setSearchQuery("")}
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
         <p className="px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-          Inhaltsverzeichnis
+          {searchQuery ? `${filteredSections.length} Treffer` : "Inhaltsverzeichnis"}
         </p>
         <nav className="space-y-0.5 px-2">
-          {sections.map(({ id, label, icon: Icon }) => (
+          {filteredSections.map(({ id, label, icon: Icon }) => (
             <a
               key={id}
               href={`#${id}`}
-              onClick={() => setActive(id)}
+              onClick={() => { setActive(id); setSearchQuery(""); }}
               className={cn(
                 "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
                 active === id
@@ -171,6 +219,11 @@ export function DocsClient({ userRolle }: DocsClientProps) {
               {label}
             </a>
           ))}
+          {filteredSections.length === 0 && (
+            <div className="px-3 py-4 text-xs text-muted-foreground text-center">
+              Keine Treffer für &quot;{searchQuery}&quot;
+            </div>
+          )}
         </nav>
       </aside>
 
@@ -190,9 +243,21 @@ export function DocsClient({ userRolle }: DocsClientProps) {
             <p className="mt-2 text-base text-muted-foreground max-w-xl">
               Alles was du wissen musst — von der Grundkonfiguration bis zur API-Integration.
             </p>
-            <div className="mt-4 flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Du bist angemeldet als</span>
-              <RoleBadge role={userRolle} />
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Du bist angemeldet als</span>
+                <RoleBadge role={userRolle} />
+              </div>
+              {/* Mobile search */}
+              <div className="lg:hidden relative">
+                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  className="pl-8 w-52 h-8 text-xs"
+                  placeholder="Dokumentation durchsuchen…"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
             </div>
           </div>
 

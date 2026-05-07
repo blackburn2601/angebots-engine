@@ -3,8 +3,9 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, ListChecks } from "lucide-react";
+import { Plus, ListChecks, Pencil } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { ClickableRow } from "./pricelist-row";
 
 export default async function PricelistsPage() {
   await requireRole("SUPER_ADMIN", "DOMAIN_ADMIN");
@@ -57,7 +58,11 @@ export default async function PricelistsPage() {
                 let itemCount = 0;
                 try { itemCount = JSON.parse(pl.items_json).length; } catch {}
                 return (
-                  <tr key={pl.id} className="hover:bg-muted/30 transition-colors">
+                  <ClickableRow
+                    key={pl.id}
+                    href={`/pricelists/${pl.id}`}
+                    className="hover:bg-primary/5 transition-colors"
+                  >
                     <td className="p-3 font-medium">{pl.name}</td>
                     <td className="p-3 text-muted-foreground">{formatDate(pl.gueltig_ab)}</td>
                     <td className="p-3 text-muted-foreground">{formatDate(pl.gueltig_bis)}</td>
@@ -69,11 +74,17 @@ export default async function PricelistsPage() {
                       </Badge>
                     </td>
                     <td className="p-3 text-right">
-                      <Link href={`/pricelists/${pl.id}`}>
-                        <Button variant="ghost" size="sm">Bearbeiten</Button>
+                      <Link
+                        href={`/pricelists/${pl.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Button variant="ghost" size="sm" className="hover:bg-primary/10">
+                          <Pencil className="h-4 w-4" />
+                          Bearbeiten
+                        </Button>
                       </Link>
                     </td>
-                  </tr>
+                  </ClickableRow>
                 );
               })}
             </tbody>
