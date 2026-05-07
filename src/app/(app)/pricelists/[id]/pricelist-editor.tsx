@@ -108,7 +108,7 @@ export function PricelistEditor({ pricelist: initial, allDomains }: PricelistEdi
   }
 
   return (
-    <div className="max-w-5xl space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">{name}</h1>
         <div className="flex items-center gap-2">
@@ -226,7 +226,7 @@ export function PricelistEditor({ pricelist: initial, allDomains }: PricelistEdi
           )}
         </TabsContent>
 
-        <TabsContent value="einstellungen" className="space-y-4 mt-4 max-w-sm">
+        <TabsContent value="einstellungen" className="space-y-4 mt-4">
           <div className="space-y-1.5">
             <Label>Name</Label>
             <Input value={name} onChange={(e) => { setName(e.target.value); setSaved(false); }} />

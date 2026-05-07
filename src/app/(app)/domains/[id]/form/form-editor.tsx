@@ -81,7 +81,7 @@ export function FormEditor({ domainId, initialConfig }: FormEditorProps) {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
           {config.parameter.length === 0

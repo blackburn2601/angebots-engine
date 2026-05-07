@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutGrid, Settings2, ListChecks, ShoppingCart, Users, Key,
-  LogOut, ChevronRight, Zap
+  LogOut, ChevronRight, Zap, BookOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from "next-auth/react";
@@ -25,6 +25,7 @@ const navItems: NavItem[] = [
   { href: "/configurator", label: "Konfigurator", icon: ShoppingCart },
   { href: "/admin/users", label: "Benutzer", icon: Users, roles: ["SUPER_ADMIN"] },
   { href: "/admin/api-keys", label: "API-Keys", icon: Key, roles: ["SUPER_ADMIN"] },
+  { href: "/docs", label: "Dokumentation", icon: BookOpen },
 ];
 
 interface SidebarProps {
