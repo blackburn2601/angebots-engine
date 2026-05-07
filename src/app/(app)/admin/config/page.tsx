@@ -13,8 +13,10 @@ export default async function ConfigPage() {
       prisma.pricelist.count(),
       prisma.user.count(),
       prisma.apiKey.count({ where: { aktiv: true } }),
-      prisma.webhookUrl.findMany({ select: { id: true, label: true, url: true, aktiv: true } }),
-      prisma.appSetting.findMany(),
+      // Fallback for webhookUrl if model doesn't exist yet
+      (prisma.webhookUrl as any)?.findMany?.({ select: { id: true, label: true, url: true, aktiv: true } }) ?? Promise.resolve([]),
+      // Fallback for appSetting if model doesn't exist yet
+      (prisma.appSetting as any)?.findMany?.() ?? Promise.resolve([]),
     ]);
 
   const config = {
