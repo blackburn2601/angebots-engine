@@ -54,9 +54,16 @@ interface FieldCardProps {
   onChange: (f: Datenfeld) => void;
   onDelete: () => void;
   orderIssues?: string[];
+  isDragOver?: boolean;
+  draggable?: boolean;
+  onDragStart?: () => void;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDragLeave?: () => void;
+  onDrop?: () => void;
+  onDragEnd?: () => void;
 }
 
-function FieldCard({ field, allFields, onChange, onDelete, orderIssues }: FieldCardProps) {
+function FieldCard({ field, allFields, onChange, onDelete, orderIssues, isDragOver, draggable, onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd }: FieldCardProps) {
   const allKeys = allFields.map((f) => f.key);
   const [open, setOpen] = useState(!field.key);
   const [keyManuallyEdited, setKeyManuallyEdited] = useState(!!field.key);
@@ -81,10 +88,23 @@ function FieldCard({ field, allFields, onChange, onDelete, orderIssues }: FieldC
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <div className={cn("rounded-xl border bg-card shadow-sm transition-shadow", open && "shadow-md")}>
+      <div
+        draggable={draggable}
+        onDragStart={onDragStart}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+        onDragEnd={onDragEnd}
+        className={cn(
+          "rounded-xl border bg-card shadow-sm transition-shadow",
+          open && "shadow-md",
+          draggable && "cursor-grab active:cursor-grabbing",
+          isDragOver && "border-primary bg-primary/5 shadow-md scale-[1.01]"
+        )}
+      >
         <CollapsibleTrigger asChild>
           <div className="flex cursor-pointer items-center gap-3 p-4 hover:bg-muted/30 rounded-xl">
-            <GripVertical className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+            <GripVertical className={cn("h-4 w-4 shrink-0", draggable ? "text-muted-foreground/60" : "text-muted-foreground/20")} />
             <div className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-semibold", typeConfig.color)}>
               <TypeIcon className="h-4 w-4" />
             </div>
@@ -362,6 +382,8 @@ export function FieldsEditor({ domainId, initialConfig }: FieldsEditorProps) {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [dragOver, setDragOver] = useState<number | null>(null);
+  const dragIndex = useRef<number | null>(null);
 
   const updateField = useCallback((index: number, field: Datenfeld) => {
     setConfig((prev) => {
@@ -383,6 +405,17 @@ export function FieldsEditor({ domainId, initialConfig }: FieldsEditorProps) {
 
   const addField = useCallback(() => {
     setConfig((prev) => ({ ...prev, felder: [...prev.felder, newField()] }));
+    setSaved(false);
+  }, []);
+
+  const moveField = useCallback((from: number, to: number) => {
+    if (from === to) return;
+    setConfig((prev) => {
+      const felder = [...prev.felder];
+      const [moved] = felder.splice(from, 1);
+      felder.splice(to, 0, moved);
+      return { ...prev, felder };
+    });
     setSaved(false);
   }, []);
 
@@ -529,6 +562,17 @@ export function FieldsEditor({ domainId, initialConfig }: FieldsEditorProps) {
                 onChange={(updated) => updateField(i, updated)}
                 onDelete={() => deleteField(i)}
                 orderIssues={issuesByKey.get(f.key)}
+                draggable={!q}
+                isDragOver={dragOver === i}
+                onDragStart={() => { dragIndex.current = i; }}
+                onDragOver={(e) => { e.preventDefault(); setDragOver(i); }}
+                onDragLeave={() => setDragOver(null)}
+                onDrop={() => {
+                  if (dragIndex.current !== null) moveField(dragIndex.current, i);
+                  dragIndex.current = null;
+                  setDragOver(null);
+                }}
+                onDragEnd={() => { dragIndex.current = null; setDragOver(null); }}
               />
             ))
           )}
