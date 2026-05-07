@@ -19,6 +19,7 @@ export function DomainNav({ domainId, domainName }: DomainNavProps) {
     { href: `${base}/fields`, label: "Felder" },
     { href: `${base}/form`, label: "Formular" },
     { href: `${base}/rules`, label: "Regelwerk" },
+    { href: `${base}/validations`, label: "Validierungen" },
     { href: `${base}/components`, label: "Komponenten" },
     { href: `${base}/simulator`, label: "Simulator" },
   ];
