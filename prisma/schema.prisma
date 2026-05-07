@@ -115,3 +115,40 @@ model LoginAttempt {
 
   @@index([ip, zeitstempel])
 }
+
+model ApiLog {
+  id              String   @id @default(cuid())
+  method          String
+  path            String
+  status_code     Int?
+  duration_ms     Int?
+  request_headers String?
+  request_body    String?
+  response_body   String?
+  ip              String?
+  user_id         String?
+  api_key_id      String?
+  error           String?
+  zeitstempel     DateTime @default(now())
+
+  @@index([zeitstempel])
+  @@index([path])
+  @@index([status_code])
+}
+
+model WebhookUrl {
+  id          String   @id @default(cuid())
+  label       String
+  url         String
+  description String?
+  aktiv       Boolean  @default(true)
+  erstellt_am DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model AppSetting {
+  key        String   @id
+  value      String
+  updated_at DateTime @updatedAt
+  updated_by String?
+}
