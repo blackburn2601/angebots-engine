@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutGrid, Settings2, ListChecks, ShoppingCart, Users, Key,
-  LogOut, ChevronRight, Zap, BookOpen, Menu, X
+  LayoutDashboard, LayoutGrid, Settings2, ListChecks, ShoppingCart,
+  Users, Key, LogOut, ChevronRight, ChevronLeft, Zap, BookOpen,
+  Menu, X, Activity, Webhook, Code2, PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from "next-auth/react";
@@ -17,15 +18,18 @@ interface NavItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   roles?: UserRolle[];
-  children?: { href: string; label: string }[];
 }
 
 const navItems: NavItem[] = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/domains", label: "Domänen", icon: LayoutGrid },
   { href: "/pricelists", label: "Preislisten", icon: ListChecks, roles: ["SUPER_ADMIN", "DOMAIN_ADMIN"] },
   { href: "/configurator", label: "Konfigurator", icon: ShoppingCart },
   { href: "/admin/users", label: "Benutzer", icon: Users, roles: ["SUPER_ADMIN"] },
   { href: "/admin/api-keys", label: "API-Keys", icon: Key, roles: ["SUPER_ADMIN"] },
+  { href: "/admin/logs", label: "API-Logs", icon: Activity, roles: ["SUPER_ADMIN"] },
+  { href: "/admin/webhooks", label: "Webhooks", icon: Webhook, roles: ["SUPER_ADMIN", "DOMAIN_ADMIN"] },
+  { href: "/admin/config", label: "Config", icon: Code2, roles: ["SUPER_ADMIN"] },
   { href: "/docs", label: "Dokumentation", icon: BookOpen },
 ];
 
@@ -40,7 +44,8 @@ function SidebarContent({
   userName,
   userEmail,
   onNavigate,
-}: SidebarProps & { onNavigate?: () => void }) {
+  collapsed,
+}: SidebarProps & { onNavigate?: () => void; collapsed?: boolean }) {
   const pathname = usePathname();
 
   const visibleItems = navItems.filter(
@@ -50,7 +55,7 @@ function SidebarContent({
   return (
     <>
       <nav className="flex-1 overflow-y-auto px-2 py-4">
-        <ul className="space-y-1">
+        <ul className="space-y-0.5">
           {visibleItems.map((item) => {
             const active = pathname.startsWith(item.href);
             return (
@@ -58,16 +63,29 @@ function SidebarContent({
                 <Link
                   href={item.href}
                   onClick={onNavigate}
+                  title={collapsed ? item.label : undefined}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150",
+                    "group relative",
                     active
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                      ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
+                      : "text-muted-foreground hover:bg-accent/80 hover:text-foreground hover:translate-x-0.5",
+                    collapsed && "justify-center px-2"
                   )}
                 >
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
-                  {active && <ChevronRight className="ml-auto h-3 w-3 opacity-60" />}
+                  <item.icon className={cn("h-4 w-4 shrink-0", active && "drop-shadow-sm")} />
+                  {!collapsed && (
+                    <>
+                      <span className="flex-1 truncate">{item.label}</span>
+                      {active && <ChevronRight className="ml-auto h-3 w-3 opacity-60" />}
+                    </>
+                  )}
+                  {/* Tooltip for collapsed mode */}
+                  {collapsed && (
+                    <span className="pointer-events-none absolute left-full ml-2 z-50 rounded-md bg-popover text-popover-foreground text-xs px-2 py-1 shadow-md border whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+                      {item.label}
+                    </span>
+                  )}
                 </Link>
               </li>
             );
@@ -75,34 +93,52 @@ function SidebarContent({
         </ul>
       </nav>
 
-      <div className="border-t p-3">
+      <div className="border-t p-2">
         <Link
           href="/settings/profile"
           onClick={onNavigate}
+          title={collapsed ? `${userName} – Profil` : undefined}
           className={cn(
-            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-150 group relative",
             pathname.startsWith("/settings")
-              ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground hover:bg-accent hover:text-foreground"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:bg-accent/80 hover:text-foreground hover:translate-x-0.5",
+            collapsed && "justify-center px-2"
           )}
         >
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-xs font-semibold">
+          <div className={cn(
+            "flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold shrink-0 ring-2",
+            pathname.startsWith("/settings")
+              ? "bg-primary-foreground text-primary ring-primary-foreground/30"
+              : "bg-primary text-primary-foreground ring-primary/20"
+          )}>
             {userName?.[0]?.toUpperCase() ?? "?"}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="truncate text-xs font-medium text-foreground">{userName}</p>
-            <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
-          </div>
-          <Settings2 className="h-3.5 w-3.5 shrink-0" />
+          {!collapsed && (
+            <div className="flex-1 min-w-0">
+              <p className="truncate text-xs font-semibold leading-tight">{userName}</p>
+              <p className="truncate text-[11px] text-muted-foreground leading-tight">{userEmail}</p>
+            </div>
+          )}
+          {!collapsed && <Settings2 className="h-3.5 w-3.5 shrink-0 opacity-50" />}
+          {collapsed && (
+            <span className="pointer-events-none absolute left-full ml-2 z-50 rounded-md bg-popover text-popover-foreground text-xs px-2 py-1 shadow-md border whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+              {userName} – Profil
+            </span>
+          )}
         </Link>
         <Button
           variant="ghost"
           size="sm"
-          className="mt-1 w-full justify-start gap-3 px-3 text-muted-foreground"
+          title={collapsed ? "Abmelden" : undefined}
+          className={cn(
+            "mt-0.5 w-full transition-all duration-150 text-muted-foreground hover:text-destructive hover:bg-destructive/10",
+            collapsed ? "justify-center px-2" : "justify-start gap-3 px-3"
+          )}
           onClick={() => signOut({ callbackUrl: "/login" })}
         >
-          <LogOut className="h-4 w-4" />
-          Abmelden
+          <LogOut className="h-4 w-4 shrink-0" />
+          {!collapsed && <span>Abmelden</span>}
         </Button>
       </div>
     </>
@@ -111,7 +147,22 @@ function SidebarContent({
 
 export function Sidebar({ userRolle, userName, userEmail }: SidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
+
+  // Load collapse state from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("sidebar-collapsed");
+    if (saved === "true") setCollapsed(true);
+  }, []);
+
+  const toggleCollapse = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem("sidebar-collapsed", String(next));
+      return next;
+    });
+  };
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -120,39 +171,52 @@ export function Sidebar({ userRolle, userName, userEmail }: SidebarProps) {
 
   // Prevent body scroll when mobile menu is open
   useEffect(() => {
-    if (mobileOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
   }, [mobileOpen]);
 
   const logoBar = (
-    <div className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
-      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary">
+    <div className="flex h-14 shrink-0 items-center border-b px-3 gap-2">
+      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary shadow-sm shadow-primary/30 shrink-0">
         <Zap className="h-4 w-4 text-primary-foreground" />
       </div>
-      <span className="font-semibold text-sm">Angebots-Engine</span>
+      {!collapsed && (
+        <span className="font-semibold text-sm flex-1 truncate">Angebots-Engine</span>
+      )}
+      <button
+        aria-label={collapsed ? "Sidebar ausklappen" : "Sidebar einklappen"}
+        onClick={toggleCollapse}
+        className="hidden md:flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors shrink-0"
+      >
+        {collapsed ? (
+          <PanelLeftOpen className="h-4 w-4" />
+        ) : (
+          <PanelLeftClose className="h-4 w-4" />
+        )}
+      </button>
     </div>
   );
 
   return (
     <>
-      {/* Desktop sidebar — always visible on md+ */}
-      <aside className="hidden md:flex h-screen w-60 shrink-0 flex-col border-r bg-card">
+      {/* Desktop sidebar */}
+      <aside
+        className={cn(
+          "hidden md:flex h-screen shrink-0 flex-col border-r bg-card/80 backdrop-blur-sm transition-all duration-300 ease-in-out",
+          collapsed ? "w-[60px]" : "w-60"
+        )}
+      >
         {logoBar}
         <SidebarContent
           userRolle={userRolle}
           userName={userName}
           userEmail={userEmail}
+          collapsed={collapsed}
         />
       </aside>
 
       {/* Mobile top bar */}
-      <header className="md:hidden fixed top-0 inset-x-0 z-40 flex h-14 items-center gap-3 border-b bg-card px-4">
+      <header className="md:hidden fixed top-0 inset-x-0 z-40 flex h-14 items-center gap-3 border-b bg-card/90 backdrop-blur-sm px-4 shadow-sm">
         <button
           aria-label="Menü öffnen"
           onClick={() => setMobileOpen(true)}
@@ -161,7 +225,7 @@ export function Sidebar({ userRolle, userName, userEmail }: SidebarProps) {
           <Menu className="h-5 w-5" />
         </button>
         <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary">
+          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary shadow-sm">
             <Zap className="h-3.5 w-3.5 text-primary-foreground" />
           </div>
           <span className="font-semibold text-sm">Angebots-Engine</span>
@@ -170,18 +234,11 @@ export function Sidebar({ userRolle, userName, userEmail }: SidebarProps) {
 
       {/* Mobile overlay */}
       {mobileOpen && (
-        <div
-          className="md:hidden fixed inset-0 z-50 flex"
-          aria-modal="true"
-          role="dialog"
-        >
-          {/* Backdrop */}
+        <div className="md:hidden fixed inset-0 z-50 flex" aria-modal="true" role="dialog">
           <div
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={() => setMobileOpen(false)}
           />
-
-          {/* Drawer */}
           <aside className="relative flex h-full w-72 max-w-[85vw] flex-col bg-card shadow-2xl">
             <div className="flex h-14 shrink-0 items-center justify-between border-b px-4">
               <div className="flex items-center gap-2">
