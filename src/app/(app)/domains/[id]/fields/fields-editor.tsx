@@ -241,19 +241,31 @@ function FieldCard({ field, allFields, onChange, onDelete, orderIssues, isDragOv
                   fields={allFields.filter((f) => f.key !== field.key)}
                   placeholder="z.B. laenge * breite"
                 />
-                {orderIssues && orderIssues.length > 0 && (
-                  <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
-                    <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-amber-600" />
-                    <div className="text-amber-800">
-                      <p className="font-medium">Berechnungsreihenfolge</p>
-                      <p className="mt-0.5 text-amber-700">
-                        {orderIssues.length === 1
-                          ? `„${orderIssues[0]}" wird erst nach diesem Feld berechnet — das Ergebnis kann falsch sein.`
-                          : `${orderIssues.map((k) => `„${k}"`).join(", ")} werden erst nach diesem Feld berechnet — das Ergebnis kann falsch sein.`}
-                      </p>
+                {orderIssues && orderIssues.length > 0 && (() => {
+                  const deps = orderIssues.map((k) => {
+                    const f = allFields.find((f) => f.key === k);
+                    return { key: k, label: f?.label ?? k, breaking: f?.typ === "formula" };
+                  });
+                  const anyBreaking = deps.some((d) => d.breaking);
+                  return (
+                    <div className={cn(
+                      "flex items-start gap-2 rounded-lg border p-3 text-sm",
+                      anyBreaking ? "border-red-200 bg-red-50" : "border-amber-200 bg-amber-50"
+                    )}>
+                      <AlertTriangle className={cn("h-4 w-4 mt-0.5 shrink-0", anyBreaking ? "text-red-500" : "text-amber-600")} />
+                      <div className={anyBreaking ? "text-red-800" : "text-amber-800"}>
+                        <p className="font-medium">Berechnungsreihenfolge</p>
+                        <p className={cn("mt-0.5", anyBreaking ? "text-red-700" : "text-amber-700")}>
+                          {deps.map((d) => `„${d.label}"`).join(", ")}{" "}
+                          {deps.length === 1 ? "steht" : "stehen"} weiter unten —{" "}
+                          {anyBreaking
+                            ? "das Ergebnis wird falsch berechnet."
+                            : "zur Übersichtlichkeit nach oben verschieben."}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             )}
 
@@ -448,6 +460,7 @@ export function FieldsEditor({ domainId, initialConfig }: FieldsEditorProps) {
     issuesByKey.get(issue.fieldKey)!.push(issue.dependsOn);
   }
   const affectedCount = issuesByKey.size;
+  const hasEngineBreaking = formulaIssues.some((i) => i.isEngineBreaking);
 
   function applyFormulaFix() {
     setConfig((prev) => ({ ...prev, felder: fixFormulaOrder(prev.felder) }));
@@ -506,25 +519,36 @@ export function FieldsEditor({ domainId, initialConfig }: FieldsEditorProps) {
       </div>
 
       {affectedCount > 0 && !q && (
-        <div className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
-          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
-          <p className="flex-1 text-sm text-amber-800">
+        <div className={cn(
+          "flex items-center gap-3 rounded-lg border px-4 py-3",
+          hasEngineBreaking
+            ? "border-red-200 bg-red-50"
+            : "border-amber-200 bg-amber-50"
+        )}>
+          <AlertTriangle className={cn("h-4 w-4 shrink-0", hasEngineBreaking ? "text-red-500" : "text-amber-600")} />
+          <p className={cn("flex-1 text-sm", hasEngineBreaking ? "text-red-800" : "text-amber-800")}>
             <span className="font-medium">
               {affectedCount === 1
-                ? "1 Berechnungsfeld referenziert"
-                : `${affectedCount} Berechnungsfelder referenzieren`}{" "}
-              ein Feld, das noch nicht berechnet wurde.
-            </span>{" "}
-            Das Ergebnis kann falsch sein.
+                ? "1 Berechnungsfeld referenziert Felder,"
+                : `${affectedCount} Berechnungsfelder referenzieren Felder,`}{" "}
+              {hasEngineBreaking
+                ? "die weiter unten stehen — das Ergebnis wird falsch berechnet."
+                : "die zur Übersichtlichkeit weiter oben stehen sollten."}
+            </span>
           </p>
           <Button
             variant="outline"
             size="sm"
-            className="shrink-0 border-amber-300 text-amber-800 hover:bg-amber-100 hover:text-amber-900"
+            className={cn(
+              "shrink-0",
+              hasEngineBreaking
+                ? "border-red-300 text-red-800 hover:bg-red-100"
+                : "border-amber-300 text-amber-800 hover:bg-amber-100 hover:text-amber-900"
+            )}
             onClick={applyFormulaFix}
           >
             <Wand2 className="h-3.5 w-3.5" />
-            Reihenfolge korrigieren
+            Reihenfolge automatisch korrigieren
           </Button>
         </div>
       )}
