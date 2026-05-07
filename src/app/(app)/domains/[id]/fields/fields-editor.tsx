@@ -163,17 +163,17 @@ function FieldCard({ field, allFields, onChange, onDelete, orderIssues }: FieldC
                 <div className="space-y-1.5">
                   <Label>Einheit</Label>
                   <Select
-                    value={customUnit ? "__custom__" : (field.einheit ?? "")}
+                    value={customUnit ? "__custom__" : (field.einheit ?? "__none__")}
                     onValueChange={(v) => {
                       if (v === "__custom__") { setCustomUnit(true); }
-                      else { setCustomUnit(false); onChange({ ...field, einheit: v || undefined }); }
+                      else { setCustomUnit(false); onChange({ ...field, einheit: v === "__none__" ? undefined : v }); }
                     }}
                   >
                     <SelectTrigger className="h-9 text-sm">
                       <SelectValue placeholder="— keine —" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">— keine —</SelectItem>
+                      <SelectItem value="__none__">— keine —</SelectItem>
                       {UNIT_PRESETS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
                       <SelectItem value="__custom__">Eigene…</SelectItem>
                     </SelectContent>
@@ -291,14 +291,14 @@ function FieldCard({ field, allFields, onChange, onDelete, orderIssues }: FieldC
                     </div>
                   ) : field.typ === "select" ? (
                     <Select
-                      value={String(field.standard ?? "")}
-                      onValueChange={(v) => onChange({ ...field, standard: v || undefined })}
+                      value={field.standard != null ? String(field.standard) : "__none__"}
+                      onValueChange={(v) => onChange({ ...field, standard: v === "__none__" ? undefined : v })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="— kein Standard —" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">— kein Standard —</SelectItem>
+                        <SelectItem value="__none__">— kein Standard —</SelectItem>
                         {(field.optionen ?? []).map((opt) => (
                           <SelectItem key={opt} value={opt}>{opt}</SelectItem>
                         ))}
