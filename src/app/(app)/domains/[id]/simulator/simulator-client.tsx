@@ -163,17 +163,20 @@ export function SimulatorClient({ config, pricelists }: SimulatorClientProps) {
           {config.felder.filter((f) => ["formula", "output"].includes(f.typ)).length === 0 ? (
             <p className="text-xs text-muted-foreground">Keine berechneten Felder</p>
           ) : (
-            <div className="space-y-1.5">
+            <div className="grid grid-cols-4 gap-2">
               {config.felder.filter((f) => ["formula", "output"].includes(f.typ)).map((f) => {
                 const v = result.values[f.key];
                 const fired = result.firedRules.find((r) => r.ziel_feld === f.key);
                 return (
-                  <div key={f.key} className={`flex items-center justify-between rounded-lg px-3 py-1.5 text-xs ${fired ? "bg-rose-50 border border-rose-100" : "bg-muted/50"}`}>
-                    <span className="text-muted-foreground">{f.label}</span>
-                    <span className="font-mono font-medium">
-                      {formatValue(v)} {f.einheit ?? ""}
-                      {fired && <span className="ml-1 text-rose-500">⚡</span>}
-                    </span>
+                  <div
+                    key={f.key}
+                    className={`rounded-lg border px-3 py-2 ${fired ? "border-rose-200 bg-rose-50" : "border-transparent bg-muted/50"}`}
+                  >
+                    <p className="text-xs text-muted-foreground truncate">{f.label}</p>
+                    <p className="font-mono font-semibold text-sm mt-0.5 truncate">
+                      {formatValue(v)}{f.einheit ? <span className="font-normal text-xs text-muted-foreground ml-1">{f.einheit}</span> : null}
+                      {fired && <span className="ml-1 text-rose-500 text-xs">⚡</span>}
+                    </p>
                   </div>
                 );
               })}
