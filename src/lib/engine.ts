@@ -37,11 +37,11 @@ function evaluateFormula(formel: string, values: FieldValues): number {
 }
 
 function evaluateCondition(
-  cond: { feld: string; op: string; wert?: unknown },
+  cond: { feld: string; op: string; wert?: unknown; vergleich_feld?: string },
   values: FieldValues
 ): boolean {
   const left = values[cond.feld];
-  const right = cond.wert;
+  const right = cond.vergleich_feld !== undefined ? values[cond.vergleich_feld] : cond.wert;
   switch (cond.op) {
     case "==":
     case "!=": {
@@ -76,23 +76,6 @@ export function runEngine(
 ): SimulatorResult {
   const values: FieldValues = { ...eingaben };
   const firedRules: SimulatorResult["firedRules"] = [];
-
-  // Step 0: validations
-  const validierungen: SimulatorResult["validierungen"] = [];
-  for (const val of config.validierungen ?? []) {
-    let matches = false;
-    const bed = val.bedingung;
-    if ("regeln" in bed) {
-      const results = bed.regeln.map((r) => evaluateCondition({ feld: r.feld ?? "", op: r.op, wert: r.wert }, values));
-      matches = bed.verknuepfung === "AND" ? results.every(Boolean) : results.some(Boolean);
-    } else {
-      const b = bed as { feld?: string; op: string; wert?: unknown };
-      matches = evaluateCondition({ feld: b.feld ?? "", op: b.op, wert: b.wert }, values);
-    }
-    if (matches) {
-      validierungen.push({ typ: val.typ, meldung: val.meldung });
-    }
-  }
 
   // Step 1: resolve output fields in dependency order (topological)
   const outputFelder = config.felder.filter((f) => f.typ === "output");
@@ -130,6 +113,23 @@ export function runEngine(
     if (f.formel) {
       values[f.key] = evaluateFormula(f.formel, values);
     }
+  }
+
+  // Step 2b: validations — run after formulas so formula fields are available
+  const validierungen: SimulatorResult["validierungen"] = [];
+  for (const val of config.validierungen ?? []) {
+    let matches = false;
+    const bed = val.bedingung;
+    if ("regeln" in bed) {
+      const results = bed.regeln.map((r) =>
+        evaluateCondition({ feld: r.feld ?? "", op: r.op, wert: r.wert, vergleich_feld: r.vergleich_feld }, values)
+      );
+      matches = bed.verknuepfung === "AND" ? results.every(Boolean) : results.some(Boolean);
+    } else {
+      const b = bed as { feld?: string; op: string; wert?: unknown; vergleich_feld?: string };
+      matches = evaluateCondition({ feld: b.feld ?? "", op: b.op, wert: b.wert, vergleich_feld: b.vergleich_feld }, values);
+    }
+    if (matches) validierungen.push({ typ: val.typ, meldung: val.meldung });
   }
 
   // Step 3: active Freitext rules

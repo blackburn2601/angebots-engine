@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import {
-  Plus, Trash2, ChevronDown, ChevronRight, Save, AlertTriangle, XCircle,
+  Plus, Trash2, ChevronDown, ChevronRight, Save, AlertTriangle, XCircle, ArrowLeftRight,
 } from "lucide-react";
 import type { DomainConfig, Validierung, BedingungsGruppe, Bedingung, Datenfeld } from "@/types/domain";
 import { cn } from "@/lib/utils";
@@ -52,14 +52,36 @@ interface ConditionRowProps {
 function ConditionRow({ condition, fields, onChange, onDelete, canDelete }: ConditionRowProps) {
   const selectedField = fields.find((f) => f.key === condition.feld);
   const ops = selectedField ? (OPS[selectedField.typ] ?? ["==", "!="]) : ["==", "!=", "<", "<=", ">", ">="];
+  const isFieldComparison = condition.vergleich_feld !== undefined;
+
+  // Numeric-capable operators that make sense for field comparisons
+  const numericOps = ["<", "<=", ">", ">=", "==", "!="];
+  const comparisonOps = selectedField
+    ? (["number", "formula", "output"].includes(selectedField.typ) ? numericOps : ["==", "!="])
+    : numericOps;
+
+  function toggleComparisonMode() {
+    if (isFieldComparison) {
+      onChange({ ...condition, vergleich_feld: undefined, wert: undefined });
+    } else {
+      onChange({ ...condition, wert: undefined, vergleich_feld: "" });
+    }
+  }
 
   return (
     <div className="flex items-center gap-2">
+      {/* Left field selector */}
       <Select
         value={condition.feld ?? ""}
         onValueChange={(v) => {
           const f = fields.find((f) => f.key === v);
-          onChange({ ...condition, feld: v, op: (OPS[f?.typ ?? ""] ?? ["=="])[0], wert: f?.typ === "boolean" ? true : undefined });
+          onChange({
+            ...condition,
+            feld: v,
+            op: (OPS[f?.typ ?? ""] ?? ["=="])[0],
+            wert: isFieldComparison ? undefined : (f?.typ === "boolean" ? true : undefined),
+            vergleich_feld: isFieldComparison ? condition.vergleich_feld : undefined,
+          });
         }}
       >
         <SelectTrigger className="flex-1 h-8 text-xs">
@@ -74,18 +96,47 @@ function ConditionRow({ condition, fields, onChange, onDelete, canDelete }: Cond
         </SelectContent>
       </Select>
 
+      {/* Operator */}
       <Select value={condition.op} onValueChange={(v) => onChange({ ...condition, op: v })}>
         <SelectTrigger className="w-36 h-8 text-xs">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {ops.map((op) => (
+          {(isFieldComparison ? comparisonOps : ops).map((op) => (
             <SelectItem key={op} value={op} className="text-xs">{OP_LABELS[op] ?? op}</SelectItem>
           ))}
         </SelectContent>
       </Select>
 
-      {selectedField?.typ === "boolean" ? (
+      {/* Toggle: static value ↔ field comparison */}
+      <Button
+        variant={isFieldComparison ? "secondary" : "ghost"}
+        size="icon"
+        className="h-8 w-8 shrink-0"
+        onClick={toggleComparisonMode}
+        title={isFieldComparison ? "Auf festen Wert wechseln" : "Mit anderem Feld vergleichen"}
+      >
+        <ArrowLeftRight className="h-3.5 w-3.5" />
+      </Button>
+
+      {/* Right side: field selector or value input */}
+      {isFieldComparison ? (
+        <Select
+          value={condition.vergleich_feld ?? ""}
+          onValueChange={(v) => onChange({ ...condition, vergleich_feld: v })}
+        >
+          <SelectTrigger className="w-36 h-8 text-xs">
+            <SelectValue placeholder="Vergleichsfeld…" />
+          </SelectTrigger>
+          <SelectContent>
+            {fields.filter((f) => f.key !== condition.feld).map((f) => (
+              <SelectItem key={f.key} value={f.key} className="text-xs">
+                {f.label} <span className="text-muted-foreground">({f.key})</span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ) : selectedField?.typ === "boolean" ? (
         <Select
           value={String(condition.wert ?? "true")}
           onValueChange={(v) => onChange({ ...condition, wert: v === "true" })}
@@ -349,9 +400,7 @@ export function ValidationsEditor({ domainId, initialConfig }: ValidationsEditor
     }
   }
 
-  const inputFelder = config.felder.filter((f) =>
-    ["number", "text", "select", "boolean"].includes(f.typ)
-  );
+  const inputFelder = config.felder.filter((f) => f.key);
 
   return (
     <div className="space-y-4">
