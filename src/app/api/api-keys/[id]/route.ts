@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { ApiKeyService } from "@/services/ApiKeyService";
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -10,6 +10,6 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   }
 
   const { id } = await params;
-  await prisma.apiKey.update({ where: { id }, data: { aktiv: false } });
+  await ApiKeyService.revoke(id);
   return NextResponse.json({ ok: true });
 }

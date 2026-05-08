@@ -1,25 +1,18 @@
 import { requireRole } from "@/lib/auth-helpers";
-import { prisma } from "@/lib/prisma";
+import { PricelistService } from "@/services/PricelistService";
+import { DomainService } from "@/services/DomainService";
 import { notFound } from "next/navigation";
 import { PricelistEditor } from "./pricelist-editor";
-import type { PreisItem } from "@/types/domain";
 
 export default async function PricelistPage({ params }: { params: Promise<{ id: string }> }) {
   await requireRole("SUPER_ADMIN", "DOMAIN_ADMIN");
   const { id } = await params;
 
-  const pricelist = await prisma.pricelist.findUnique({
-    where: { id },
-    include: {
-      domains: { include: { domain: { select: { id: true, name: true } } } },
-    },
-  });
+  const [pricelist, allDomains] = await Promise.all([
+    PricelistService.findByIdWithDomains(id),
+    PricelistService.findAllForDomains(),
+  ]);
   if (!pricelist) notFound();
-
-  const allDomains = await prisma.domain.findMany({ select: { id: true, name: true } });
-
-  let items: PreisItem[] = [];
-  try { items = JSON.parse(pricelist.items_json); } catch {}
 
   return (
     <div className="p-8">
@@ -30,7 +23,7 @@ export default async function PricelistPage({ params }: { params: Promise<{ id: 
           aktiv: pricelist.aktiv,
           gueltig_ab: pricelist.gueltig_ab?.toISOString() ?? null,
           gueltig_bis: pricelist.gueltig_bis?.toISOString() ?? null,
-          items,
+          items: PricelistService.parseItems(pricelist.items_json),
           domainIds: pricelist.domains.map((d) => d.domainId),
         }}
         allDomains={allDomains}

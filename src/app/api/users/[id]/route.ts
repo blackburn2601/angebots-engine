@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { z } from "zod";
-import bcrypt from "bcryptjs";
+import { UserService } from "@/services/UserService";
 
 const updateSchema = z.object({
   name: z.string().min(1).optional(),
@@ -15,12 +14,11 @@ const updateSchema = z.object({
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Nicht angemeldet" }, { status: 401 });
+
   const sessionRolle = (session.user as { rolle: string }).rolle;
   const sessionId = session.user.id;
-
   const { id } = await params;
 
-  // Users can update their own password; super admin can update anyone
   const isSelf = sessionId === id;
   if (!isSelf && sessionRolle !== "SUPER_ADMIN") {
     return NextResponse.json({ error: "Keine Berechtigung" }, { status: 403 });
@@ -30,19 +28,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Ungültige Eingabe" }, { status: 400 });
 
-  // Privilege escalation guard: sensitive fields require SUPER_ADMIN even on self-update
   if (sessionRolle !== "SUPER_ADMIN") {
     if (parsed.data.rolle !== undefined || parsed.data.aktiv !== undefined || parsed.data.muss_pw_aendern !== undefined) {
       return NextResponse.json({ error: "Keine Berechtigung" }, { status: 403 });
     }
   }
 
-  const data: Record<string, unknown> = { ...parsed.data };
-  if (parsed.data.password) {
-    data.password = await bcrypt.hash(parsed.data.password, 12);
-    data.muss_pw_aendern = false;
-  }
-
-  const user = await prisma.user.update({ where: { id }, data });
-  return NextResponse.json({ id: user.id });
+  const user = await UserService.update(id, parsed.data as Record<string, unknown>);
+  return NextResponse.json({ id: (user as { id: string }).id });
 }

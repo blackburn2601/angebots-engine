@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth-helpers";
-import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { WebhookService } from "@/services/WebhookService";
 
 const webhookSchema = z.object({
   label: z.string().min(1).max(100),
@@ -12,31 +12,18 @@ const webhookSchema = z.object({
 
 export async function GET() {
   await requireRole("SUPER_ADMIN", "DOMAIN_ADMIN");
-  
-  const hasWebhookUrl = (prisma.webhookUrl as any)?.findMany ? true : false;
-  if (!hasWebhookUrl) {
-    return NextResponse.json([]);
-  }
-  
-  const webhooks = await prisma.webhookUrl.findMany({
-    orderBy: { erstellt_am: "desc" },
-  });
+  const webhooks = await WebhookService.findAll();
   return NextResponse.json(webhooks);
 }
 
 export async function POST(req: NextRequest) {
   await requireRole("SUPER_ADMIN", "DOMAIN_ADMIN");
-  
-  const hasWebhookUrl = (prisma.webhookUrl as any)?.create ? true : false;
-  if (!hasWebhookUrl) {
-    return NextResponse.json({ error: "WebhookUrl model not initialized" }, { status: 503 });
-  }
-  
+
   const body = await req.json();
   const parsed = webhookSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const webhook = await prisma.webhookUrl.create({ data: parsed.data });
+  const webhook = await WebhookService.create(parsed.data);
   return NextResponse.json(webhook, { status: 201 });
 }

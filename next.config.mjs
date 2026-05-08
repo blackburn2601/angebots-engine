@@ -1,3 +1,8 @@
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 /** @type {import('next').NextConfig} */
 const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
@@ -9,11 +14,22 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  turbopack: {
+    root: __dirname,
+  },
   async headers() {
     return [
       {
         source: "/(.*)",
         headers: securityHeaders,
+      },
+      {
+        source: "/api/v1/:path*",
+        headers: [
+          { key: "Access-Control-Allow-Origin", value: process.env.ALLOWED_ORIGIN ?? "*" },
+          { key: "Access-Control-Allow-Methods", value: "GET,POST,PATCH,DELETE,OPTIONS" },
+          { key: "Access-Control-Allow-Headers", value: "Content-Type, Authorization" },
+        ],
       },
     ];
   },

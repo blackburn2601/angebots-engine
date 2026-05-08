@@ -1,27 +1,22 @@
-import { prisma } from "@/lib/prisma";
+import { DomainService } from "@/services/DomainService";
+import { PricelistService } from "@/services/PricelistService";
 import { requireRole } from "@/lib/auth-helpers";
 import { notFound } from "next/navigation";
 import { SimulatorClient } from "./simulator-client";
-import type { DomainConfig } from "@/types/domain";
 
 export default async function SimulatorPage({ params }: { params: Promise<{ id: string }> }) {
   await requireRole("SUPER_ADMIN", "DOMAIN_ADMIN", "SELLER");
   const { id } = await params;
 
-  const domain = await prisma.domain.findUnique({
-    where: { id },
-    include: { pricelists: { include: { pricelist: true } } },
-  });
+  const domain = await DomainService.findByIdWithPricelists(id);
   if (!domain) notFound();
 
-  const config: DomainConfig = JSON.parse(domain.config_json);
+  const config = DomainService.parseConfig(domain.config_json);
 
   const allePricelists = domain.pricelists.map((dp) => ({
     id: dp.pricelist.id,
     name: dp.pricelist.name,
-    items: (() => {
-      try { return JSON.parse(dp.pricelist.items_json); } catch { return []; }
-    })(),
+    items: PricelistService.parseItems(dp.pricelist.items_json),
   }));
 
   return (

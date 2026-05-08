@@ -1,23 +1,18 @@
 import { requireRole } from "@/lib/auth-helpers";
+import { DashboardService } from "@/services/DashboardService";
+import { WebhookService } from "@/services/WebhookService";
 import { prisma } from "@/lib/prisma";
-import { Code2, RefreshCw, Database, Globe, Key, Users, Webhook } from "lucide-react";
+import { Code2, Database, Globe, Key, Users, Webhook } from "lucide-react";
 import { ConfigViewerClient } from "./config-viewer-client";
 
 export default async function ConfigPage() {
   await requireRole("SUPER_ADMIN");
 
-  // Gather application-wide configuration (no secrets!)
-  const [domains, pricelists, users, apiKeys, webhooks, appSettings] =
-    await Promise.all([
-      prisma.domain.count(),
-      prisma.pricelist.count(),
-      prisma.user.count(),
-      prisma.apiKey.count({ where: { aktiv: true } }),
-      // Fallback for webhookUrl if model doesn't exist yet
-      (prisma.webhookUrl as any)?.findMany?.({ select: { id: true, label: true, url: true, aktiv: true } }) ?? Promise.resolve([]),
-      // Fallback for appSetting if model doesn't exist yet
-      (prisma.appSetting as any)?.findMany?.() ?? Promise.resolve([]),
-    ]);
+  const [stats, webhooks, appSettings] = await Promise.all([
+    DashboardService.getStats("SUPER_ADMIN"),
+    WebhookService.findAll(),
+    prisma.appSetting.findMany(),
+  ]);
 
   const config = {
     meta: {
@@ -27,10 +22,10 @@ export default async function ConfigPage() {
       timestamp: new Date().toISOString(),
     },
     stats: {
-      domains,
-      pricelists,
-      users,
-      api_keys_active: apiKeys,
+      domains: stats.domains,
+      pricelists: stats.pricelists,
+      users: stats.users,
+      api_keys_active: stats.apiKeys,
     },
     webhooks: webhooks.map((w) => ({
       id: w.id,
@@ -60,20 +55,19 @@ export default async function ConfigPage() {
         </div>
       </div>
 
-      {/* Stats cards */}
       <div className="mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { icon: Globe, label: "Domänen", value: domains, color: "text-blue-500 bg-blue-50" },
-          { icon: Database, label: "Preislisten", value: pricelists, color: "text-violet-500 bg-violet-50" },
-          { icon: Users, label: "Benutzer", value: users, color: "text-emerald-500 bg-emerald-50" },
-          { icon: Key, label: "Aktive API-Keys", value: apiKeys, color: "text-amber-500 bg-amber-50" },
+          { icon: Globe, label: "Domänen", value: stats.domains, color: "text-blue-500 bg-blue-50" },
+          { icon: Database, label: "Preislisten", value: stats.pricelists, color: "text-violet-500 bg-violet-50" },
+          { icon: Users, label: "Benutzer", value: stats.users, color: "text-emerald-500 bg-emerald-50" },
+          { icon: Key, label: "Aktive API-Keys", value: stats.apiKeys, color: "text-amber-500 bg-amber-50" },
         ].map(({ icon: Icon, label, value, color }) => (
           <div key={label} className="rounded-xl border bg-card p-4 flex items-center gap-3">
             <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${color}`}>
               <Icon className="h-4 w-4" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{value}</p>
+              <p className="text-2xl font-bold">{value ?? "–"}</p>
               <p className="text-xs text-muted-foreground">{label}</p>
             </div>
           </div>

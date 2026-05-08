@@ -1,12 +1,9 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { z } from "zod";
-import { slugify } from "@/lib/utils";
+import { DomainService } from "@/services/DomainService";
 
-const createSchema = z.object({
-  name: z.string().min(1).max(100),
-});
+const createSchema = z.object({ name: z.string().min(1).max(100) });
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -21,16 +18,6 @@ export async function POST(req: Request) {
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Ungültige Eingabe" }, { status: 400 });
 
-  const baseSlug = slugify(parsed.data.name);
-  let slug = baseSlug;
-  let counter = 1;
-  while (await prisma.domain.findUnique({ where: { slug } })) {
-    slug = `${baseSlug}-${counter++}`;
-  }
-
-  const domain = await prisma.domain.create({
-    data: { name: parsed.data.name, slug },
-  });
-
+  const domain = await DomainService.create(parsed.data.name);
   return NextResponse.json(domain, { status: 201 });
 }

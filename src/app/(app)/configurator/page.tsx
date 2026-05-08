@@ -1,15 +1,12 @@
 import { requireAuth } from "@/lib/auth-helpers";
-import { prisma } from "@/lib/prisma";
+import { DomainService } from "@/services/DomainService";
 import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
 
 export default async function ConfiguratorIndexPage() {
   await requireAuth();
 
-  const domains = await prisma.domain.findMany({
-    orderBy: { name: "asc" },
-    include: { _count: { select: { pricelists: true } } },
-  });
+  const domains = await DomainService.findAllForConfigurator();
 
   return (
     <div className="p-8">

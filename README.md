@@ -1,6 +1,6 @@
 # Angebots-Engine
 
-A configurable quoting and calculation engine built with Next.js 14. Define fields, formulas, rules, and components once — let the configurator handle the rest.
+A configurable quoting and calculation engine built with Next.js. Define fields, formulas, rules, and components once — let the configurator handle the rest.
 
 ---
 
@@ -14,7 +14,7 @@ A configurable quoting and calculation engine built with Next.js 14. Define fiel
 - **Price lists** — manage articles with purchase prices; CSV import supported
 - **Simulator** — test any configuration live without creating a real quote
 - **Configurator** — sales-facing UI for creating quotes in a few clicks
-- **REST API** — read domains and price lists from external systems via API keys
+- **REST API v1** — full headless API with CRUD and engine execution for external integration
 - **Role-based access** — Super Admin, Domain Admin, Seller
 
 ---
@@ -23,9 +23,9 @@ A configurable quoting and calculation engine built with Next.js 14. Define fiel
 
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 14 (App Router) |
+| Framework | Next.js 16 (App Router, Turbopack) |
 | Auth | NextAuth v5 (beta) — credentials + JWT |
-| Database | SQLite via Prisma ORM |
+| Database | PostgreSQL 16 via Docker + Prisma ORM |
 | Styling | Tailwind CSS v4 + shadcn/ui (Radix UI) |
 | Language | TypeScript |
 
@@ -35,6 +35,7 @@ A configurable quoting and calculation engine built with Next.js 14. Define fiel
 
 - Node.js 20+
 - npm 9+
+- Docker (for PostgreSQL)
 
 ---
 
@@ -53,34 +54,43 @@ cd angebots-engine
 npm install
 ```
 
-### 3. Configure environment variables
+### 3. Start the database
+
+```bash
+docker compose up -d
+```
+
+This starts a PostgreSQL 16 container on port 5432 with persistent storage.
+
+### 4. Configure environment variables
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` and set at minimum:
+Edit `.env` and set:
 
 | Variable | Description |
 |---|---|
-| `DATABASE_URL` | SQLite path — `file:./dev.db` works for local dev |
+| `DATABASE_URL` | PostgreSQL connection — `postgresql://angebots:secret@localhost:5432/angebots_engine` for local Docker |
 | `NEXTAUTH_SECRET` | Random string, min 32 characters |
 | `NEXTAUTH_URL` | Base URL of the app, e.g. `http://localhost:3000` |
 | `SEED_ADMIN_EMAIL` | Email for the initial Super Admin account |
 | `SEED_ADMIN_PASSWORD` | Password for the initial Super Admin account |
 | `SEED_ADMIN_NAME` | Display name for the initial Super Admin account |
+| `ALLOWED_ORIGIN` | Allowed CORS origin for `/api/v1/` (default: `*`) |
 
-### 4. Set up the database
+### 5. Apply the schema and seed
 
 ```bash
-# Apply the schema and generate the Prisma client
-npm run db:push
+# Run migrations
+npx prisma migrate deploy
 
 # Seed the initial admin user
 npm run db:seed
 ```
 
-### 5. Start the development server
+### 6. Start the development server
 
 ```bash
 npm run dev
@@ -94,12 +104,12 @@ Open [http://localhost:3000](http://localhost:3000) and log in with the credenti
 
 | Script | Description |
 |---|---|
-| `npm run dev` | Start development server with hot reload |
+| `npm run dev` | Start development server with Turbopack |
 | `npm run build` | Build for production |
 | `npm run start` | Start production server |
 | `npm run lint` | Run ESLint |
-| `npm run db:push` | Push Prisma schema to the database |
-| `npm run db:migrate` | Run Prisma migrations (dev) |
+| `npm run db:push` | Push Prisma schema without migrations (prototype) |
+| `npm run db:migrate` | Create and apply a new migration |
 | `npm run db:seed` | Seed the initial admin user |
 
 ---
@@ -108,28 +118,91 @@ Open [http://localhost:3000](http://localhost:3000) and log in with the credenti
 
 | Role | Access |
 |---|---|
-| **Super Admin** | Full access — users, API keys, domains, price lists, configurator |
+| **Super Admin** | Full access — users, API keys, domains, price lists, configurator, admin panel |
 | **Domain Admin** | Domains, price lists, configurator |
 | **Seller** | Configurator only |
 
 ---
 
-## REST API
+## REST API v1
 
-External systems can access domains and price lists via API keys (created in the admin panel).
-
-All requests require an `Authorization` header:
+The `/api/v1/` routes provide a versioned, headless API with CORS support. All requests require a valid session cookie **or** an `Authorization` header with a Bearer API key.
 
 ```
 Authorization: Bearer ae_live_<key>
 ```
 
+API keys are created in the admin panel (Super Admin only).
+
+### Domains
+
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/external/domains` | List all active domains |
-| `GET` | `/api/external/domains/:id` | Get domain configuration |
-| `GET` | `/api/external/pricelists` | List all active price lists |
-| `GET` | `/api/external/pricelists/:id` | Get price list articles |
+| `GET` | `/api/v1/domains` | List all domains |
+| `POST` | `/api/v1/domains` | Create a domain |
+| `GET` | `/api/v1/domains/:id` | Get domain details |
+| `PATCH` | `/api/v1/domains/:id` | Update a domain |
+| `DELETE` | `/api/v1/domains/:id` | Delete a domain |
+| `POST` | `/api/v1/domains/:id/duplicate` | Duplicate a domain |
+| `POST` | `/api/v1/domains/:id/run` | **Run the rules engine** |
+
+#### Engine endpoint
+
+`POST /api/v1/domains/:id/run`
+
+```json
+{
+  "inputs": { "leistung_kwp": 10, "dachtyp": "satteldach" },
+  "preis_items": [
+    { "id": "item_1", "name": "Modul 400W", "ek_preis": 120.00 }
+  ]
+}
+```
+
+Returns the full `SimulatorResult` — resolved output fields, activated components, and validation messages.
+
+### Price Lists
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/v1/pricelists` | List all price lists |
+| `POST` | `/api/v1/pricelists` | Create a price list |
+| `GET` | `/api/v1/pricelists/:id` | Get price list with items |
+| `PATCH` | `/api/v1/pricelists/:id` | Update a price list |
+| `DELETE` | `/api/v1/pricelists/:id` | Delete a price list |
+
+### Users
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/v1/users` | List all users (Super Admin) |
+| `POST` | `/api/v1/users` | Create a user (Super Admin) |
+| `PATCH` | `/api/v1/users/:id` | Update user (Super Admin) |
+
+### API Keys
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/v1/api-keys` | List API keys (Super Admin) |
+| `POST` | `/api/v1/api-keys` | Create an API key (Super Admin) |
+| `DELETE` | `/api/v1/api-keys/:id` | Revoke an API key (Super Admin) |
+
+### Dashboard
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/v1/dashboard/stats` | Stats overview |
+
+### Admin
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/v1/admin/logs` | API request log (Super Admin) |
+| `DELETE` | `/api/v1/admin/logs` | Clear API log (Super Admin) |
+| `GET` | `/api/v1/admin/webhooks` | List webhooks (Super Admin) |
+| `POST` | `/api/v1/admin/webhooks` | Create webhook (Super Admin) |
+| `PATCH` | `/api/v1/admin/webhooks/:id` | Update webhook (Super Admin) |
+| `DELETE` | `/api/v1/admin/webhooks/:id` | Delete webhook (Super Admin) |
 
 ---
 
@@ -138,29 +211,56 @@ Authorization: Bearer ae_live_<key>
 ```
 src/
 ├── app/
-│   ├── (app)/               # Authenticated app routes
-│   │   ├── admin/           # User and API key management (Super Admin)
+│   ├── (app)/               # Authenticated app routes (Server Components)
+│   │   ├── admin/           # User, API key, webhook, config management
 │   │   ├── configurator/    # Sales configurator
 │   │   ├── docs/            # In-app documentation
-│   │   ├── domains/         # Domain configuration
+│   │   ├── domains/         # Domain configuration editor
 │   │   ├── pricelists/      # Price list management
 │   │   └── settings/        # User profile
-│   ├── api/                 # API routes (internal + external)
+│   ├── api/
+│   │   ├── v1/              # Headless REST API (versioned, CORS-enabled)
+│   │   │   ├── domains/
+│   │   │   ├── pricelists/
+│   │   │   ├── users/
+│   │   │   ├── api-keys/
+│   │   │   ├── dashboard/
+│   │   │   └── admin/
+│   │   └── ...              # Legacy internal API routes (for Client Components)
 │   └── login/               # Auth pages
 ├── components/
 │   ├── layout/              # Sidebar, navigation
 │   └── ui/                  # shadcn/ui components
 ├── lib/
-│   ├── engine.ts            # Core calculation engine
+│   ├── engine.ts            # Core rules engine (pure function — not modified)
+│   ├── api-response.ts      # Typed API response helpers
 │   ├── auth.ts              # NextAuth configuration
 │   ├── prisma.ts            # Prisma client singleton
 │   └── validate-fields.ts   # Formula order validation
+├── services/                # Service layer — all database access
+│   ├── DomainService.ts
+│   ├── PricelistService.ts
+│   ├── UserService.ts
+│   ├── ApiKeyService.ts
+│   ├── EngineService.ts
+│   ├── DashboardService.ts
+│   └── WebhookService.ts
 ├── types/
-│   └── domain.ts            # Core domain type definitions
+│   └── domain.ts            # Core domain type definitions (not modified)
 prisma/
-├── schema.prisma            # Database schema
+├── schema.prisma            # PostgreSQL schema
+├── migrations/              # Migration history
 └── seed.ts                  # Database seeder
+docker-compose.yml           # PostgreSQL 16 container
+docs/
+└── architecture.md          # System architecture overview
 ```
+
+---
+
+## Architecture Overview
+
+See [docs/architecture.md](docs/architecture.md) for a detailed description of the service layer, headless API design, and the rules engine.
 
 ---
 

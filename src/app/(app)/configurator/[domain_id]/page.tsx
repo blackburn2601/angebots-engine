@@ -1,28 +1,25 @@
 import { requireAuth } from "@/lib/auth-helpers";
-import { prisma } from "@/lib/prisma";
+import { DomainService } from "@/services/DomainService";
+import { PricelistService } from "@/services/PricelistService";
 import { notFound } from "next/navigation";
 import { ConfiguratorClient } from "./configurator-client";
-import type { DomainConfig, PreisItem } from "@/types/domain";
+import type { PreisItem } from "@/types/domain";
 
 export default async function ConfiguratorPage({ params }: { params: Promise<{ domain_id: string }> }) {
   await requireAuth();
   const { domain_id } = await params;
 
-  const domain = await prisma.domain.findUnique({
-    where: { id: domain_id },
-    include: { pricelists: { include: { pricelist: true } } },
-  });
+  const domain = await DomainService.findByIdWithPricelists(domain_id);
   if (!domain) notFound();
 
-  const config: DomainConfig = JSON.parse(domain.config_json);
+  const config = DomainService.parseConfig(domain.config_json);
+
   const pricelists = domain.pricelists
     .filter((dp) => dp.pricelist.aktiv)
     .map((dp) => ({
       id: dp.pricelist.id,
       name: dp.pricelist.name,
-      items: (() => {
-        try { return JSON.parse(dp.pricelist.items_json) as PreisItem[]; } catch { return []; }
-      })(),
+      items: PricelistService.parseItems(dp.pricelist.items_json) as PreisItem[],
     }));
 
   return (
