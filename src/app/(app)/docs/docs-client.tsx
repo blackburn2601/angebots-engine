@@ -12,6 +12,7 @@ import {
   ArrowRight, CheckCircle2, XCircle, AlertTriangle, Code2,
   Hash, Type, ToggleLeft, List, FunctionSquare, Calculator,
   GripVertical, ChevronRight, Info, Layers, Globe, Lock, Search, X,
+  Database, Webhook, Terminal,
 } from "lucide-react";
 
 interface DocsClientProps {
@@ -125,7 +126,8 @@ const sections = [
   { id: "pricelists", label: "Preislisten", icon: ListChecks },
   { id: "simulator", label: "Simulator", icon: PlayCircle },
   { id: "configurator", label: "Konfigurator", icon: ShoppingCart },
-  { id: "api", label: "API & Integration", icon: Globe },
+  { id: "api", label: "API v1", icon: Globe },
+  { id: "database", label: "Datenbank", icon: Database },
 ];
 
 // Keywords for each section used in search
@@ -141,7 +143,8 @@ const SECTION_KEYWORDS: Record<string, string[]> = {
   pricelists: ["preislisten", "preis", "artikel", "einkaufspreis", "csv"],
   simulator: ["simulator", "test", "live", "eingaben", "berechnung prüfen"],
   configurator: ["konfigurator", "verkäufer", "angebot", "export"],
-  api: ["api", "integration", "rest", "endpunkt", "auth", "key", "bearer"],
+  api: ["api", "integration", "rest", "endpunkt", "auth", "key", "bearer", "v1", "headless", "cors", "engine", "run", "n8n", "webhook", "curl"],
+  database: ["datenbank", "postgresql", "postgres", "docker", "migration", "prisma", "sql"],
 };
 
 export function DocsClient({ userRolle }: DocsClientProps) {
@@ -848,53 +851,243 @@ dachflaeche > 50 ? dachflaeche * 1.1 : dachflaeche`}</CodeBlock>
 
           {/* ── API ── */}
           <section className="space-y-6">
-            <SectionHeading id="api" icon={Globe} title="API & Integration" subtitle="Externe Systeme anbinden — nur für Super Admins" />
+            <SectionHeading id="api" icon={Globe} title="REST API v1" subtitle="Vollständige headless API für externe Systeme, Automatisierungen und eigene Frontends" />
 
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2">
               <RoleBadge role="SUPER_ADMIN" />
-              <span className="text-xs text-muted-foreground">Nur für Super Admins</span>
+              <span className="text-xs text-muted-foreground">API-Keys werden nur von Super Admins erstellt</span>
             </div>
 
-            <p className="text-sm text-muted-foreground">
-              Die Angebots-Engine stellt eine REST-API bereit, über die externe Systeme Domänen und Preislisten lesen und Konfigurationen ausführen können.
-              Zugriff erfolgt über <strong className="text-foreground">API-Keys</strong>, die im Admin-Bereich erstellt werden.
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Alle Funktionen der Angebots-Engine sind über eine versionierte REST-API unter <code className="bg-muted px-1.5 py-0.5 rounded text-xs">/api/v1/</code> erreichbar.
+              Externe Systeme wie <strong className="text-foreground">n8n</strong>, eigene Frontends oder andere Werkzeuge können darüber vollständig auf Domänen, Preislisten, Benutzer und die Berechnungs-Engine zugreifen.
+              CORS ist aktiviert — die erlaubten Origins werden per Umgebungsvariable gesteuert.
             </p>
 
-            <div className="rounded-2xl border bg-card p-5 space-y-4">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Verfügbare Endpunkte</p>
-              <div className="space-y-2">
-                {[
-                  { method: "GET", path: "/api/external/domains", desc: "Alle aktiven Domänen abrufen" },
-                  { method: "GET", path: "/api/external/domains/:id", desc: "Konfiguration einer Domäne" },
-                  { method: "GET", path: "/api/external/pricelists", desc: "Alle aktiven Preislisten" },
-                  { method: "GET", path: "/api/external/pricelists/:id", desc: "Artikel einer Preisliste" },
-                ].map(({ method, path, desc }) => (
-                  <div key={path} className="flex items-center gap-3 rounded-lg bg-muted/40 px-3 py-2">
-                    <span className="text-[10px] font-bold font-mono bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">{method}</span>
-                    <code className="text-xs font-mono text-foreground flex-1">{path}</code>
-                    <span className="text-xs text-muted-foreground hidden sm:block">{desc}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
+            {/* Auth */}
             <div className="rounded-2xl border bg-card p-5 space-y-3">
               <p className="text-sm font-semibold flex items-center gap-2">
                 <Key className="h-4 w-4 text-primary" /> Authentifizierung
               </p>
               <p className="text-xs text-muted-foreground">
-                Alle API-Anfragen müssen einen gültigen API-Key im <code className="bg-muted px-1 rounded text-[11px]">Authorization</code>-Header mitsenden.
+                API-Keys werden im Admin-Bereich erstellt. Jede Anfrage muss den Key als Bearer-Token im <code className="bg-muted px-1 rounded text-[11px]">Authorization</code>-Header übermitteln.
               </p>
-              <CodeBlock>{`// HTTP-Header
-Authorization: Bearer ae_live_xxxxxxxxxxxxxxxxxx
+              <CodeBlock>{`Authorization: Bearer ae_live_xxxxxxxxxxxxxxxxxx
 
-// Beispiel mit curl
-curl https://deine-domain.de/api/external/domains \\
+# Beispiel mit curl
+curl https://deine-domain.de/api/v1/domains \\
   -H "Authorization: Bearer ae_live_xxx..."`}</CodeBlock>
             </div>
 
+            {/* Engine endpoint highlight */}
+            <div className="rounded-2xl border-2 border-primary/30 bg-primary/5 p-5 space-y-4">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                  <Zap className="h-4 w-4 text-primary" />
+                </div>
+                <p className="text-sm font-semibold">Engine-Endpunkt — der Kern der Integration</p>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Mit <code className="bg-white/60 dark:bg-black/20 px-1.5 py-0.5 rounded font-mono">POST /api/v1/domains/:id/run</code> führst du die vollständige Berechnungslogik einer Domäne aus —
+                inklusive Regelwerk, Formeln, Validierungen und Komponenten-Kalkulation.
+                Das Ergebnis entspricht exakt dem, was der Simulator im Browser anzeigt.
+              </p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Request</p>
+                  <CodeBlock>{`POST /api/v1/domains/:id/run
+
+{
+  "inputs": {
+    "leistung_kwp": 10,
+    "dachtyp": "satteldach",
+    "hat_speicher": true
+  },
+  "preis_items": [
+    {
+      "id": "ART-001",
+      "name": "Modul 400W",
+      "ek_preis": 120.00
+    }
+  ]
+}`}</CodeBlock>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Response</p>
+                  <CodeBlock>{`{
+  "data": {
+    "outputs": {
+      "preis_gesamt": 2880,
+      "anzahl_module": 24
+    },
+    "components": [
+      {
+        "id": "komp_1",
+        "active": true,
+        "menge": 24,
+        "ek_preis": 120.00
+      }
+    ],
+    "validations": [],
+    "texts": []
+  }
+}`}</CodeBlock>
+                </div>
+              </div>
+            </div>
+
+            {/* Endpoint table */}
+            <div className="space-y-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Alle Endpunkte im Überblick</p>
+
+              {([
+                {
+                  group: "Domänen",
+                  color: "bg-blue-100 text-blue-700",
+                  endpoints: [
+                    { method: "GET", path: "/api/v1/domains", desc: "Alle Domänen abrufen" },
+                    { method: "POST", path: "/api/v1/domains", desc: "Neue Domäne erstellen" },
+                    { method: "GET", path: "/api/v1/domains/:id", desc: "Einzelne Domäne abrufen" },
+                    { method: "PATCH", path: "/api/v1/domains/:id", desc: "Domäne aktualisieren" },
+                    { method: "DELETE", path: "/api/v1/domains/:id", desc: "Domäne löschen" },
+                    { method: "POST", path: "/api/v1/domains/:id/duplicate", desc: "Domäne duplizieren" },
+                    { method: "POST", path: "/api/v1/domains/:id/run", desc: "Regelwerk ausführen (Engine)" },
+                  ],
+                },
+                {
+                  group: "Preislisten",
+                  color: "bg-violet-100 text-violet-700",
+                  endpoints: [
+                    { method: "GET", path: "/api/v1/pricelists", desc: "Alle Preislisten" },
+                    { method: "POST", path: "/api/v1/pricelists", desc: "Neue Preisliste erstellen" },
+                    { method: "GET", path: "/api/v1/pricelists/:id", desc: "Preisliste mit Artikeln" },
+                    { method: "PATCH", path: "/api/v1/pricelists/:id", desc: "Preisliste aktualisieren" },
+                    { method: "DELETE", path: "/api/v1/pricelists/:id", desc: "Preisliste löschen" },
+                  ],
+                },
+                {
+                  group: "Benutzer",
+                  color: "bg-emerald-100 text-emerald-700",
+                  endpoints: [
+                    { method: "GET", path: "/api/v1/users", desc: "Alle Benutzer (Super Admin)" },
+                    { method: "POST", path: "/api/v1/users", desc: "Benutzer anlegen (Super Admin)" },
+                    { method: "PATCH", path: "/api/v1/users/:id", desc: "Benutzer bearbeiten (Super Admin)" },
+                  ],
+                },
+                {
+                  group: "API-Keys",
+                  color: "bg-amber-100 text-amber-700",
+                  endpoints: [
+                    { method: "GET", path: "/api/v1/api-keys", desc: "Alle API-Keys (Super Admin)" },
+                    { method: "POST", path: "/api/v1/api-keys", desc: "Neuen Key erstellen (Super Admin)" },
+                    { method: "DELETE", path: "/api/v1/api-keys/:id", desc: "Key widerrufen (Super Admin)" },
+                  ],
+                },
+                {
+                  group: "Dashboard & Admin",
+                  color: "bg-slate-100 text-slate-700",
+                  endpoints: [
+                    { method: "GET", path: "/api/v1/dashboard/stats", desc: "Statistik-Übersicht" },
+                    { method: "GET", path: "/api/v1/admin/logs", desc: "API-Anfragen-Log" },
+                    { method: "DELETE", path: "/api/v1/admin/logs", desc: "Log leeren" },
+                    { method: "GET", path: "/api/v1/admin/webhooks", desc: "Webhooks abrufen" },
+                    { method: "POST", path: "/api/v1/admin/webhooks", desc: "Webhook anlegen" },
+                    { method: "PATCH", path: "/api/v1/admin/webhooks/:id", desc: "Webhook aktualisieren" },
+                    { method: "DELETE", path: "/api/v1/admin/webhooks/:id", desc: "Webhook löschen" },
+                  ],
+                },
+              ] as { group: string; color: string; endpoints: { method: string; path: string; desc: string }[] }[]).map(({ group, color, endpoints }) => (
+                <div key={group} className="rounded-xl border bg-card overflow-hidden">
+                  <div className="px-4 py-2.5 bg-muted/40 border-b">
+                    <p className="text-xs font-semibold text-muted-foreground">{group}</p>
+                  </div>
+                  <div className="divide-y">
+                    {endpoints.map(({ method, path, desc }) => {
+                      const methodColor =
+                        method === "GET" ? "bg-blue-100 text-blue-700" :
+                        method === "POST" ? "bg-emerald-100 text-emerald-700" :
+                        method === "PATCH" ? "bg-amber-100 text-amber-700" :
+                        method === "DELETE" ? "bg-red-100 text-red-700" : color;
+                      return (
+                        <div key={`${method}-${path}`} className="flex items-center gap-3 px-4 py-2">
+                          <span className={`text-[10px] font-bold font-mono px-1.5 py-0.5 rounded shrink-0 w-14 text-center ${methodColor}`}>{method}</span>
+                          <code className="text-xs font-mono text-foreground flex-1 truncate">{path}</code>
+                          <span className="text-xs text-muted-foreground hidden sm:block shrink-0">{desc}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+
             <Callout type="warning">
-              API-Keys haben vollen Lesezugriff auf alle aktiven Domänen und Preislisten. Teile sie nicht öffentlich und widerrufe kompromittierte Keys sofort.
+              API-Keys haben vollen Zugriff auf alle Daten und Operationen der Engine. Teile sie nicht öffentlich und widerrufe kompromittierte Keys sofort im Admin-Bereich unter <strong>Admin → API-Keys</strong>.
+            </Callout>
+          </section>
+
+          <Separator />
+
+          {/* ── DATABASE ── */}
+          <section className="space-y-6">
+            <SectionHeading id="database" icon={Database} title="Datenbank & Infrastruktur" subtitle="PostgreSQL via Docker — produktionsreif von Anfang an" />
+
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Die Angebots-Engine verwendet <strong className="text-foreground">PostgreSQL 16</strong> als Datenbank.
+              Für die lokale Entwicklung wird die Datenbank über Docker bereitgestellt — kein manuelles Installieren erforderlich.
+            </p>
+
+            <div className="rounded-2xl border bg-card p-5 space-y-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <Terminal className="h-3.5 w-3.5" /> Datenbank starten
+              </p>
+              <CodeBlock>{`# PostgreSQL-Container starten (einmalig oder nach Neustart)
+docker compose up -d
+
+# Status prüfen
+docker compose ps
+
+# Logs ansehen
+docker compose logs postgres`}</CodeBlock>
+              <p className="text-xs text-muted-foreground">
+                Die Daten werden in einem Docker-Volume gespeichert und bleiben auch nach einem Neustart erhalten.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {[
+                { icon: Database, color: "bg-blue-100 text-blue-600", title: "PostgreSQL 16", desc: "Produktions­bewährte relationale Datenbank" },
+                { icon: Layers, color: "bg-violet-100 text-violet-600", title: "Prisma ORM", desc: "Typsicherer Datenbankzugriff mit Migrationen" },
+                { icon: Package, color: "bg-emerald-100 text-emerald-600", title: "Docker Volume", desc: "Persistente Datenspeicherung ohne manuelle Verwaltung" },
+              ].map(({ icon: Icon, color, title, desc }) => (
+                <div key={title} className="rounded-xl border bg-card p-4 space-y-2">
+                  <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${color}`}>
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <p className="text-sm font-medium">{title}</p>
+                  <p className="text-xs text-muted-foreground">{desc}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="rounded-2xl border bg-card p-5 space-y-3">
+              <p className="text-sm font-semibold">Verbindungsparameter (lokal)</p>
+              <CodeBlock>{`# .env
+DATABASE_URL="postgresql://angebots:secret@localhost:5432/angebots_engine"
+
+# Docker Compose Standard-Zugangsdaten
+Host:     localhost
+Port:     5432
+Benutzer: angebots
+Passwort: secret
+Datenbank: angebots_engine`}</CodeBlock>
+              <p className="text-xs text-muted-foreground">
+                Für Produktionsumgebungen sollte <code className="bg-muted px-1 rounded text-[11px]">DATABASE_URL</code> auf eine gesicherte externe Datenbankinstanz zeigen.
+              </p>
+            </div>
+
+            <Callout type="info">
+              Domänen-Konfigurationen und Preislisten-Artikel werden als JSON in der Datenbank gespeichert. Die Berechnungs-Engine liest diese Daten zur Laufzeit — Schemaänderungen an der Konfigurationsstruktur erfordern daher keine Datenbankmigrationen.
             </Callout>
           </section>
 

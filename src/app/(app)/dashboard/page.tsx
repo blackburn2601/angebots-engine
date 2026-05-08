@@ -82,14 +82,6 @@ export default async function DashboardPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent pointer-events-none" />
         <div className="relative flex items-start justify-between gap-4">
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-md shadow-primary/30">
-                <Zap className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary font-bold text-primary-foreground text-sm shadow-md">
-                {(user.name ?? "?")?.[0]?.toUpperCase()}
-              </div>
-            </div>
             <h1 className="text-2xl font-bold">{greeting(user.name ?? "")}</h1>
             <p className="mt-1 text-muted-foreground">
               Du bist angemeldet als <strong>{user.email}</strong> –{" "}
