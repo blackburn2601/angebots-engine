@@ -1,5 +1,9 @@
 @AGENTS.md
 
+# Rules
+
+- **Never push directly to `main`.** Always work on a feature branch and open a pull request.
+
 # Angebots-Engine
 
 A Next.js 16 (App Router) application for building configurable pricing/offer domains with a visual rules engine, headless REST API, and multi-role access control.
