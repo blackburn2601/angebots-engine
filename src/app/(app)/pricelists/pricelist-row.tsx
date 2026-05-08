@@ -13,7 +13,10 @@ export function ClickableRow({ href, children, className }: Props) {
   const router = useRouter();
   return (
     <tr
-      onClick={() => router.push(href)}
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest("a, button")) return;
+        router.push(href);
+      }}
       className={cn("cursor-pointer", className)}
     >
       {children}

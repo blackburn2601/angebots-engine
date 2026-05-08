@@ -1,5 +1,5 @@
 import { requireRole } from "@/lib/auth-helpers";
-import { prisma } from "@/lib/prisma";
+import { PricelistService } from "@/services/PricelistService";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,10 +10,7 @@ import { ClickableRow } from "./pricelist-row";
 export default async function PricelistsPage() {
   await requireRole("SUPER_ADMIN", "DOMAIN_ADMIN");
 
-  const pricelists = await prisma.pricelist.findMany({
-    orderBy: { erstellt_am: "desc" },
-    include: { _count: { select: { domains: true } } },
-  });
+  const pricelists = await PricelistService.findAll();
 
   return (
     <div className="p-8">
@@ -55,8 +52,7 @@ export default async function PricelistsPage() {
             </thead>
             <tbody className="divide-y">
               {pricelists.map((pl) => {
-                let itemCount = 0;
-                try { itemCount = JSON.parse(pl.items_json).length; } catch {}
+                const itemCount = PricelistService.parseItems(pl.items_json).length;
                 return (
                   <ClickableRow
                     key={pl.id}
@@ -74,10 +70,7 @@ export default async function PricelistsPage() {
                       </Badge>
                     </td>
                     <td className="p-3 text-right">
-                      <Link
-                        href={`/pricelists/${pl.id}`}
-                        onClick={(e) => e.stopPropagation()}
-                      >
+                      <Link href={`/pricelists/${pl.id}`}>
                         <Button variant="ghost" size="sm" className="hover:bg-primary/10">
                           <Pencil className="h-4 w-4" />
                           Bearbeiten

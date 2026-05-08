@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { authenticateApiKey } from "@/lib/api-key-auth";
 import { checkApiRateLimit } from "@/lib/api-rate-limit";
-import { prisma } from "@/lib/prisma";
+import { DomainService } from "@/services/DomainService";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? req.headers.get("x-real-ip") ?? "unknown";
@@ -11,15 +11,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   if (!authorized) return NextResponse.json({ error: "Ungültiger oder fehlender API-Key" }, { status: 401 });
 
   const { id } = await params;
-  const domain = await prisma.domain.findUnique({
-    where: { id },
-    include: { pricelists: { select: { pricelistId: true } } },
-  });
-
+  const domain = await DomainService.findByIdWithPricelists(id);
   if (!domain) return NextResponse.json({ error: "Domäne nicht gefunden" }, { status: 404 });
-
-  let config;
-  try { config = JSON.parse(domain.config_json); } catch { config = {}; }
 
   return NextResponse.json({
     id: domain.id,
@@ -27,6 +20,6 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     slug: domain.slug,
     updated_at: domain.updated_at,
     pricelist_ids: domain.pricelists.map((p) => p.pricelistId),
-    config,
+    config: DomainService.parseConfig(domain.config_json),
   });
 }

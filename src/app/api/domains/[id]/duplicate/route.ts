@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { slugify } from "@/lib/utils";
+import { DomainService } from "@/services/DomainService";
 
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -13,20 +12,10 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   }
 
   const { id } = await params;
-  const source = await prisma.domain.findUnique({ where: { id } });
-  if (!source) return NextResponse.json({ error: "Nicht gefunden" }, { status: 404 });
-
-  const newName = `${source.name} (Kopie)`;
-  const baseSlug = slugify(newName);
-  let slug = baseSlug;
-  let counter = 1;
-  while (await prisma.domain.findUnique({ where: { slug } })) {
-    slug = `${baseSlug}-${counter++}`;
+  try {
+    const copy = await DomainService.duplicate(id);
+    return NextResponse.json(copy, { status: 201 });
+  } catch {
+    return NextResponse.json({ error: "Nicht gefunden" }, { status: 404 });
   }
-
-  const copy = await prisma.domain.create({
-    data: { name: newName, slug, config_json: source.config_json },
-  });
-
-  return NextResponse.json(copy, { status: 201 });
 }

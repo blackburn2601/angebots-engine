@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { authenticateApiKey } from "@/lib/api-key-auth";
 import { checkApiRateLimit } from "@/lib/api-rate-limit";
-import { prisma } from "@/lib/prisma";
+import { DomainService } from "@/services/DomainService";
 import { withLogging } from "@/lib/api-logger";
 
 async function handler(req: Request) {
@@ -11,12 +11,10 @@ async function handler(req: Request) {
   const authorized = await authenticateApiKey(req.headers.get("authorization"));
   if (!authorized) return NextResponse.json({ error: "Ungültiger oder fehlender API-Key" }, { status: 401 });
 
-  const domains = await prisma.domain.findMany({
-    select: { id: true, name: true, slug: true, updated_at: true },
-    orderBy: { name: "asc" },
-  });
-
-  return NextResponse.json(domains);
+  const domains = await DomainService.findAll();
+  return NextResponse.json(
+    domains.map((d) => ({ id: d.id, name: d.name, slug: d.slug, updated_at: d.updated_at }))
+  );
 }
 
 export const GET = withLogging(handler);

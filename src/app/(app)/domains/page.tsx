@@ -1,5 +1,5 @@
 import { requireRole } from "@/lib/auth-helpers";
-import { prisma } from "@/lib/prisma";
+import { DomainService } from "@/services/DomainService";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,10 +32,7 @@ function getDomainStats(configJson: string) {
 export default async function DomainsPage() {
   await requireRole("SUPER_ADMIN", "DOMAIN_ADMIN", "SELLER");
 
-  const domains = await prisma.domain.findMany({
-    orderBy: { erstellt_am: "desc" },
-    include: { _count: { select: { pricelists: true } } },
-  });
+  const domains = await DomainService.findAllWithCount();
 
   return (
     <div className="p-8">
@@ -79,7 +76,6 @@ export default async function DomainsPage() {
                 key={domain.id}
                 className="group relative flex flex-col rounded-xl border bg-card shadow-sm transition-shadow hover:shadow-md"
               >
-                {/* Overlay link makes the whole card clickable */}
                 <Link
                   href={`/domains/${domain.id}/dashboard`}
                   className="absolute inset-0 rounded-xl z-0"

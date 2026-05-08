@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { DomainService } from "@/services/DomainService";
 import { requireRole } from "@/lib/auth-helpers";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   CheckCircle2, AlertTriangle, XCircle, ArrowRight, Play,
-  Download, Copy, ListChecks, Settings2, Zap, Package
+  ListChecks, Settings2, Zap, Package
 } from "lucide-react";
 import type { DomainConfig, RegelGruppe } from "@/types/domain";
 
@@ -110,13 +110,10 @@ export default async function DomainDashboardPage({ params }: { params: Promise<
   await requireRole("SUPER_ADMIN", "DOMAIN_ADMIN", "SELLER");
   const { id } = await params;
 
-  const domain = await prisma.domain.findUnique({
-    where: { id },
-    include: { _count: { select: { pricelists: true } } },
-  });
+  const domain = await DomainService.findByIdWithCount(id);
   if (!domain) notFound();
 
-  const config: DomainConfig = JSON.parse(domain.config_json);
+  const config: DomainConfig = DomainService.parseConfig(domain.config_json);
   const checks = buildHealthCheck(config, domain._count.pricelists);
   const errors = checks.filter((c) => c.status === "error");
   const warnings = checks.filter((c) => c.status === "warning");
@@ -144,7 +141,7 @@ export default async function DomainDashboardPage({ params }: { params: Promise<
                 <>
                   <XCircle className="h-5 w-5 text-destructive" />
                   <span className="font-semibold text-destructive">
-                    {errors.length} Fehler{errors.length !== 1 ? "" : ""}, {warnings.length} Warnung{warnings.length !== 1 ? "en" : ""}
+                    {errors.length} Fehler, {warnings.length} Warnung{warnings.length !== 1 ? "en" : ""}
                   </span>
                 </>
               ) : (

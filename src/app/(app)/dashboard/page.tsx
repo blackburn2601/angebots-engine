@@ -1,6 +1,6 @@
 import { requireAuth } from "@/lib/auth-helpers";
-import { prisma } from "@/lib/prisma";
 import { canManageUsers, canManageApiKeys, canManagePricelists } from "@/lib/auth-helpers";
+import { DashboardService } from "@/services/DashboardService";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 
 function greeting(name: string) {
-  const hour = new Date().getUTCHours() + 1; // +1 rough CET offset
+  const hour = new Date().getUTCHours() + 1;
   if (hour >= 5 && hour < 11) return `Guten Morgen, ${name}!`;
   if (hour >= 11 && hour < 18) return `Guten Tag, ${name}!`;
   if (hour >= 18 && hour < 22) return `Guten Abend, ${name}!`;
@@ -20,37 +20,17 @@ function greeting(name: string) {
 export default async function DashboardPage() {
   const user = await requireAuth();
 
-  const [
-    domainsCount,
-    pricelistsCount,
-    usersCount,
-    apiKeysCount,
-    recentDomains,
-    recentLogs,
-    webhooksCount,
-  ] = await Promise.all([
-    prisma.domain.count(),
-    prisma.pricelist.count(),
-    canManageUsers(user.rolle) ? prisma.user.count() : Promise.resolve(null),
-    canManageApiKeys(user.rolle) ? prisma.apiKey.count({ where: { aktiv: true } }) : Promise.resolve(null),
-    prisma.domain.findMany({
-      orderBy: { updated_at: "desc" },
-      take: 5,
-      select: { id: true, name: true, slug: true, updated_at: true },
-    }),
-    prisma.apiLog.findMany({
-      orderBy: { zeitstempel: "desc" },
-      take: 8,
-      select: { id: true, method: true, path: true, status_code: true, duration_ms: true, zeitstempel: true },
-    }),
-    prisma.webhookUrl.count({ where: { aktiv: true } }),
+  const [stats, recentDomains, recentLogs] = await Promise.all([
+    DashboardService.getStats(user.rolle),
+    DashboardService.getRecentDomains(),
+    DashboardService.getRecentLogs(),
   ]);
 
   const statsCards = [
     {
       icon: LayoutGrid,
       label: "Domänen",
-      value: domainsCount,
+      value: stats.domains,
       href: "/domains",
       color: "bg-blue-50 text-blue-600",
       available: true,
@@ -58,7 +38,7 @@ export default async function DashboardPage() {
     {
       icon: ListChecks,
       label: "Preislisten",
-      value: pricelistsCount,
+      value: stats.pricelists,
       href: "/pricelists",
       color: "bg-violet-50 text-violet-600",
       available: canManagePricelists(user.rolle),
@@ -66,7 +46,7 @@ export default async function DashboardPage() {
     {
       icon: Users,
       label: "Benutzer",
-      value: usersCount ?? "–",
+      value: stats.users ?? "–",
       href: "/admin/users",
       color: "bg-emerald-50 text-emerald-600",
       available: canManageUsers(user.rolle),
@@ -74,7 +54,7 @@ export default async function DashboardPage() {
     {
       icon: Key,
       label: "API-Keys",
-      value: apiKeysCount ?? "–",
+      value: stats.apiKeys ?? "–",
       href: "/admin/api-keys",
       color: "bg-amber-50 text-amber-600",
       available: canManageApiKeys(user.rolle),
@@ -82,7 +62,7 @@ export default async function DashboardPage() {
     {
       icon: Webhook,
       label: "Webhooks",
-      value: webhooksCount,
+      value: stats.webhooks,
       href: "/admin/webhooks",
       color: "bg-rose-50 text-rose-600",
       available: canManageUsers(user.rolle) || canManagePricelists(user.rolle),
@@ -98,7 +78,6 @@ export default async function DashboardPage() {
 
   return (
     <div className="p-6 md:p-8 max-w-6xl mx-auto">
-      {/* Hero greeting */}
       <div className="mb-8 rounded-2xl border bg-gradient-to-br from-primary/10 via-card to-violet-500/5 p-6 shadow-sm relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent pointer-events-none" />
         <div className="relative flex items-start justify-between gap-4">
@@ -128,7 +107,6 @@ export default async function DashboardPage() {
             </Link>
           </div>
         </div>
-        {/* Decorative dots */}
         <div className="absolute right-6 bottom-4 grid grid-cols-5 gap-1.5 opacity-20 pointer-events-none">
           {Array.from({ length: 20 }).map((_, i) => (
             <div key={i} className="h-1.5 w-1.5 rounded-full bg-primary" />
@@ -136,7 +114,6 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="mb-8">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
           <TrendingUp className="h-4 w-4" /> Übersicht
@@ -159,7 +136,6 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Domains */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
@@ -204,7 +180,6 @@ export default async function DashboardPage() {
             )}
           </div>
 
-          {/* API Log Preview (admin only) */}
           {canManageApiKeys(user.rolle) && recentLogs.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-3">
@@ -243,7 +218,6 @@ export default async function DashboardPage() {
           )}
         </div>
 
-        {/* Quick actions */}
         <div className="space-y-4">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
             <Zap className="h-4 w-4" /> Schnellzugriff
@@ -262,7 +236,6 @@ export default async function DashboardPage() {
             ))}
           </div>
 
-          {/* Status card */}
           <div className="rounded-xl border bg-card p-4 space-y-3">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> System-Status
@@ -271,7 +244,7 @@ export default async function DashboardPage() {
               { label: "Angebots-Engine", ok: true },
               { label: "Datenbank", ok: true },
               { label: "API-Logging", ok: true },
-              { label: `Webhooks (${webhooksCount} aktiv)`, ok: webhooksCount >= 0 },
+              { label: `Webhooks (${stats.webhooks} aktiv)`, ok: stats.webhooks >= 0 },
             ].map(({ label, ok }) => (
               <div key={label} className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">{label}</span>
@@ -283,7 +256,6 @@ export default async function DashboardPage() {
             ))}
           </div>
 
-          {/* Docs link */}
           <Link href="/docs">
             <div className="rounded-xl border border-dashed border-primary/30 bg-primary/5 p-4 hover:bg-primary/10 transition-colors cursor-pointer">
               <div className="flex items-center gap-3">

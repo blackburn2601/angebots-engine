@@ -22,12 +22,11 @@
     --input: 220 13% 91%;
     --ring: 221 83% 53%;
     --radius: 0.5rem;
+    /* ── Cool gradient background mesh ── */
+    --bg-mesh-1: hsl(221, 83%, 95%);
+    --bg-mesh-2: hsl(262, 70%, 96%);
+    --bg-mesh-3: hsl(210, 80%, 96%);
   }
-
-  /* ── Cool gradient background mesh ── */
-  --bg-mesh-1: hsl(221 83% 95%);
-  --bg-mesh-2: hsl(262 70% 96%);
-  --bg-mesh-3: hsl(210 80% 96%);
 
   .dark {
     --background: 224 71.4% 4.1%;

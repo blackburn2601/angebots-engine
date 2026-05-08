@@ -1,29 +1,24 @@
-import { prisma } from "@/lib/prisma";
+import { DomainService } from "@/services/DomainService";
+import { PricelistService } from "@/services/PricelistService";
 import { requireRole } from "@/lib/auth-helpers";
 import { notFound } from "next/navigation";
 import { ComponentsEditor } from "./components-editor";
-import type { DomainConfig } from "@/types/domain";
 
 export default async function ComponentsPage({ params }: { params: Promise<{ id: string }> }) {
   await requireRole("SUPER_ADMIN", "DOMAIN_ADMIN");
   const { id } = await params;
 
-  const domain = await prisma.domain.findUnique({
-    where: { id },
-    include: { pricelists: { include: { pricelist: true } } },
-  });
+  const domain = await DomainService.findByIdWithPricelists(id);
   if (!domain) notFound();
 
-  const config: DomainConfig = JSON.parse(domain.config_json);
+  const config = DomainService.parseConfig(domain.config_json);
 
-  const allePricelists = domain.pricelists.map((dp) => dp.pricelist);
-  const alleArtikel = allePricelists.flatMap((pl) => {
-    try {
-      return JSON.parse(pl.items_json) as { artikel_nr: string; bezeichnung: string }[];
-    } catch {
-      return [];
-    }
-  });
+  const alleArtikel = domain.pricelists.flatMap((dp) =>
+    PricelistService.parseItems(dp.pricelist.items_json).map((item) => ({
+      artikel_nr: item.artikel_nr,
+      bezeichnung: item.bezeichnung,
+    }))
+  );
 
   return (
     <div className="p-8">
