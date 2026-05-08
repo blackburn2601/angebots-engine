@@ -14,6 +14,7 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  output: "standalone",
   turbopack: {
     root: __dirname,
   },
