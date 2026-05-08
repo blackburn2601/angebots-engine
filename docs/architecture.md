@@ -129,8 +129,48 @@ The Prisma schema stores domain configurations and price list items as JSON stri
 
 ---
 
+## Deployment
+
+The application is packaged as a Docker image using Next.js's `output: "standalone"` mode, which produces a minimal self-contained bundle (~200 MB) rather than copying the full `node_modules` tree.
+
+### Per-customer isolation
+
+Each customer runs an independent `docker compose` stack:
+
+```
+server
+├── customer-a/
+│   ├── docker-compose.yml   → next-app (port 3001) + postgres (internal)
+│   └── .env                 → own NEXTAUTH_SECRET, POSTGRES_PASSWORD, NEXTAUTH_URL
+├── customer-b/
+│   ├── docker-compose.yml   → next-app (port 3002) + postgres (internal)
+│   └── .env
+└── reverse proxy            → routes *.domain.com → correct APP_PORT
+```
+
+This gives each customer full data isolation (separate PostgreSQL volume), independent restarts and upgrades, and straightforward per-customer backup/restore.
+
+### Startup sequence
+
+`docker-entrypoint.sh` runs on every container start:
+
+1. `prisma migrate deploy` — applies any pending migrations (idempotent, safe on restart)
+2. `node server.js` — starts the Next.js standalone server
+
+### Build pipeline
+
+```
+deps stage    → npm ci
+builder stage → prisma generate + next build
+runner stage  → standalone output + prisma client binary + migrations folder
+```
+
+Prisma's native query engine binary (`.prisma/client/`) and the CLI (`prisma/build/index.js`) are copied explicitly into the runner stage because Next.js's file tracer does not pick up native `.node` binaries automatically.
+
+---
+
 ## Authentication
 
 NextAuth v5 (beta) with the Credentials provider. Session tokens are JWTs. Role (`SUPER_ADMIN`, `DOMAIN_ADMIN`, `SELLER`) is embedded in the JWT and checked server-side via `requireRole()` in `src/lib/auth-helpers.ts`.
 
-API key authentication hashes keys with bcrypt before storage. Only the prefix (`ae_live_xxxx`) is stored in plaintext for display purposes.
+API key authentication hashes keys with bcrypt before storage. Only the prefix (`eak_live_xxxx`) is stored in plaintext for display purposes.
