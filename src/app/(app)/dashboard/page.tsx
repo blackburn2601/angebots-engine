@@ -227,39 +227,6 @@ export default async function DashboardPage() {
               </Link>
             ))}
           </div>
-
-          <div className="rounded-xl border bg-card p-4 space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> System-Status
-            </p>
-            {[
-              { label: "Angebots-Engine", ok: true },
-              { label: "Datenbank", ok: true },
-              { label: "API-Logging", ok: true },
-              { label: `Webhooks (${stats.webhooks} aktiv)`, ok: stats.webhooks >= 0 },
-            ].map(({ label, ok }) => (
-              <div key={label} className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">{label}</span>
-                <span className={`flex items-center gap-1 text-xs font-medium ${ok ? "text-emerald-600" : "text-red-600"}`}>
-                  <div className={`h-2 w-2 rounded-full ${ok ? "bg-emerald-500" : "bg-red-500"} animate-pulse`} />
-                  {ok ? "Online" : "Fehler"}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <Link href="/docs">
-            <div className="rounded-xl border border-dashed border-primary/30 bg-primary/5 p-4 hover:bg-primary/10 transition-colors cursor-pointer">
-              <div className="flex items-center gap-3">
-                <BookOpen className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="text-sm font-medium">Dokumentation</p>
-                  <p className="text-xs text-muted-foreground">Alles über die Angebots-Engine</p>
-                </div>
-                <ArrowRight className="ml-auto h-4 w-4 text-primary" />
-              </div>
-            </div>
-          </Link>
         </div>
       </div>
     </div>
