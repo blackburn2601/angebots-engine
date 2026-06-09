@@ -11,7 +11,7 @@ export default async function ConfigPage() {
   const [stats, webhooks, appSettings] = await Promise.all([
     DashboardService.getStats("SUPER_ADMIN"),
     WebhookService.findAll(),
-    prisma.appSetting.findMany(),
+    prisma.appSetting.findMany().catch(() => []),
   ]);
 
   const config = {
@@ -19,7 +19,6 @@ export default async function ConfigPage() {
       app: "angebots-engine",
       version: "0.1.0",
       environment: process.env.NODE_ENV ?? "unknown",
-      timestamp: new Date().toISOString(),
     },
     stats: {
       domains: stats.domains,

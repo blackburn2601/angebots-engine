@@ -84,6 +84,8 @@ export default function AdminLogsPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [selectedLog, setSelectedLog] = useState<ApiLogEntry | null>(null);
   const [clearing, setClearing] = useState(false);
+  const [userMap, setUserMap] = useState<Record<string, string>>({});
+  const [apiKeyMap, setApiKeyMap] = useState<Record<string, string>>({});
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
@@ -95,13 +97,13 @@ export default function AdminLogsPage() {
       ...(statusFilter ? { status: statusFilter } : {}),
     });
     try {
-      const res = await fetch(`/api/admin/logs?${params}`);
+      const res = await fetch(`/api/v1/admin/logs?${params}`);
       if (!res.ok) {
         setData({ logs: [], total: 0, page, limit: 50 });
         return;
       }
       const json = await res.json();
-      setData(json || { logs: [], total: 0, page, limit: 50 });
+      setData(json.data || { logs: [], total: 0, page, limit: 50 });
     } catch (error) {
       console.error('Error fetching logs:', error);
       setData({ logs: [], total: 0, page, limit: 50 });
@@ -112,10 +114,20 @@ export default function AdminLogsPage() {
 
   useEffect(() => { void fetchLogs(); }, [fetchLogs]);
 
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/v1/users").then((r) => r.json()).catch(() => ({ data: [] })),
+      fetch("/api/v1/api-keys").then((r) => r.json()).catch(() => ({ data: [] })),
+    ]).then(([usersRes, keysRes]) => {
+      setUserMap(Object.fromEntries((usersRes.data ?? []).map((u: { id: string; name: string }) => [u.id, u.name])));
+      setApiKeyMap(Object.fromEntries((keysRes.data ?? []).map((k: { id: string; label: string }) => [k.id, k.label])));
+    });
+  }, []);
+
   const clearLogs = async () => {
     if (!confirm("Alle Logs löschen? Das kann nicht rückgängig gemacht werden.")) return;
     setClearing(true);
-    await fetch("/api/admin/logs", { method: "DELETE" });
+    await fetch("/api/v1/admin/logs", { method: "DELETE" });
     setClearing(false);
     void fetchLogs();
   };
@@ -273,8 +285,8 @@ export default function AdminLogsPage() {
                   ["Zeitpunkt", new Date(selectedLog.zeitstempel).toLocaleString("de-DE")],
                   ["IP-Adresse", selectedLog.ip ?? "–"],
                   ["Dauer", selectedLog.duration_ms != null ? `${selectedLog.duration_ms}ms` : "–"],
-                  ["User-ID", selectedLog.user_id ?? "–"],
-                  ["API-Key-ID", selectedLog.api_key_id ?? "–"],
+                  ["User-ID", selectedLog.user_id ? `${selectedLog.user_id}${userMap[selectedLog.user_id] ? ` (${userMap[selectedLog.user_id]})` : ""}` : "–"],
+                  ["API-Key-ID", selectedLog.api_key_id ? `${selectedLog.api_key_id}${apiKeyMap[selectedLog.api_key_id] ? ` (${apiKeyMap[selectedLog.api_key_id]})` : ""}` : "–"],
                   ...(selectedLog.error ? [["Fehler", selectedLog.error]] : []),
                 ].map(([k, v]) => (
                   <div key={k} className="flex gap-2">

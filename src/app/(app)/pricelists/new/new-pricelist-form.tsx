@@ -18,14 +18,14 @@ export function NewPricelistForm() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/pricelists", {
+      const res = await fetch("/api/v1/pricelists", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
       });
       if (!res.ok) { const d = await res.json(); setError(d.error ?? "Fehler"); return; }
       const data = await res.json();
-      router.push(`/pricelists/${data.id}`);
+      router.push(`/pricelists/${data.data.id}`);
     } catch {
       setError("Fehler");
     } finally {

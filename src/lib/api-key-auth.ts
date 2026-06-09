@@ -1,11 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
-export async function authenticateApiKey(authHeader: string | null): Promise<boolean> {
-  if (!authHeader?.startsWith("Bearer ")) return false;
+// Returns the API key ID on success, null on failure
+export async function authenticateApiKey(authHeader: string | null): Promise<string | null> {
+  if (!authHeader?.startsWith("Bearer ")) return null;
   const rawKey = authHeader.slice(7);
 
-  // Find by prefix to narrow candidates
   const prefix = rawKey.slice(0, 17);
   const candidates = await prisma.apiKey.findMany({
     where: { key_prefix: prefix, aktiv: true },
@@ -18,8 +18,8 @@ export async function authenticateApiKey(authHeader: string | null): Promise<boo
         where: { id: candidate.id },
         data: { letzter_zugriff: new Date() },
       });
-      return true;
+      return candidate.id;
     }
   }
-  return false;
+  return null;
 }

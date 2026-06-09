@@ -62,7 +62,7 @@ export function FormEditor({ domainId, initialConfig }: FormEditorProps) {
     setSaving(true);
     setError("");
     try {
-      const res = await fetch(`/api/domains/${domainId}`, {
+      const res = await fetch(`/api/v1/domains/${domainId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ config_json: JSON.stringify(config) }),

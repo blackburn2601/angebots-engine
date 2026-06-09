@@ -115,9 +115,9 @@ export default function WebhooksPage() {
   const fetchWebhooks = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/webhooks");
+      const res = await fetch("/api/v1/admin/webhooks");
       const data = await res.json();
-      setWebhooks(data);
+      setWebhooks(data.data);
     } finally {
       setLoading(false);
     }
@@ -129,13 +129,13 @@ export default function WebhooksPage() {
     setSaving(true);
     try {
       if (editing) {
-        await fetch(`/api/admin/webhooks/${editing.id}`, {
+        await fetch(`/api/v1/admin/webhooks/${editing.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
       } else {
-        await fetch("/api/admin/webhooks", {
+        await fetch("/api/v1/admin/webhooks", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
@@ -151,12 +151,12 @@ export default function WebhooksPage() {
 
   const handleDelete = async (id: string, label: string) => {
     if (!confirm(`Webhook "${label}" wirklich löschen?`)) return;
-    await fetch(`/api/admin/webhooks/${id}`, { method: "DELETE" });
+    await fetch(`/api/v1/admin/webhooks/${id}`, { method: "DELETE" });
     await fetchWebhooks();
   };
 
   const handleToggle = async (webhook: WebhookUrl) => {
-    await fetch(`/api/admin/webhooks/${webhook.id}`, {
+    await fetch(`/api/v1/admin/webhooks/${webhook.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ aktiv: !webhook.aktiv }),

@@ -1,15 +1,16 @@
-import { auth } from "@/lib/auth";
 import { EngineService } from "@/services/EngineService";
 import { ok, apiError } from "@/lib/api-response";
+import { getRequestAuth } from "@/lib/request-auth";
+import { withLogging } from "@/lib/api-logger";
 import type { PreisItem } from "@/types/domain";
 
-export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth();
-  if (!session?.user) return apiError("Nicht angemeldet", 401);
+export const POST = withLogging(async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
+  const ctx = await getRequestAuth(req);
+  if (!ctx) return apiError("Not logged in", 401);
 
   const { id } = await params;
   const body = await req.json().catch(() => null);
-  if (!body || typeof body !== "object") return apiError("Ungültige Eingabe", 400);
+  if (!body || typeof body !== "object") return apiError("Missing or invalid input parameters", 400);
 
   const inputs: Record<string, unknown> = body.inputs ?? {};
   const preisItems: PreisItem[] = Array.isArray(body.preis_items) ? body.preis_items : [];
@@ -20,4 +21,4 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   } catch {
     return apiError("Domäne nicht gefunden", 404);
   }
-}
+}, { captureBody: true });

@@ -31,6 +31,7 @@ export default async function UsersPage() {
           <table className="w-full text-sm min-w-[600px]">
             <thead className="border-b bg-muted/30">
               <tr>
+                <th className="p-3 text-left font-medium text-muted-foreground">ID</th>
                 <th className="p-3 text-left font-medium text-muted-foreground">Name</th>
                 <th className="p-3 text-left font-medium text-muted-foreground">E-Mail</th>
                 <th className="p-3 text-left font-medium text-muted-foreground">Rolle</th>
@@ -42,6 +43,9 @@ export default async function UsersPage() {
             <tbody className="divide-y">
               {users.map((user) => (
                 <tr key={user.id} className="hover:bg-muted/20">
+                  <td className="p-3">
+                    <code className="rounded bg-muted px-2 py-0.5 text-xs font-mono">{user.id}</code>
+                  </td>
                   <td className="p-3 font-medium">{user.name}</td>
                   <td className="p-3 text-muted-foreground">{user.email}</td>
                   <td className="p-3">

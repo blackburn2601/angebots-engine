@@ -21,7 +21,7 @@ export function NewDomainForm() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/domains", {
+      const res = await fetch("/api/v1/domains", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: name.trim() }),
@@ -34,7 +34,7 @@ export function NewDomainForm() {
       }
 
       const data = await res.json();
-      router.push(`/domains/${data.id}/dashboard`);
+      router.push(`/domains/${data.data.id}/dashboard`);
     } catch {
       setError("Ein unerwarteter Fehler ist aufgetreten.");
     } finally {

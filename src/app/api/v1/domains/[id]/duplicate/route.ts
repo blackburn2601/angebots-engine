@@ -1,15 +1,12 @@
-import { auth } from "@/lib/auth";
 import { DomainService } from "@/services/DomainService";
 import { created, apiError } from "@/lib/api-response";
+import { getRequestAuth, hasRole } from "@/lib/request-auth";
+import { withLogging } from "@/lib/api-logger";
 
-export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth();
-  if (!session?.user) return apiError("Nicht angemeldet", 401);
-
-  const rolle = (session.user as { rolle: string }).rolle;
-  if (!["SUPER_ADMIN", "DOMAIN_ADMIN"].includes(rolle)) {
-    return apiError("Keine Berechtigung", 403);
-  }
+export const POST = withLogging(async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
+  const ctx = await getRequestAuth(req);
+  if (!ctx) return apiError("Not logged in", 401);
+  if (!hasRole(ctx, "SUPER_ADMIN", "DOMAIN_ADMIN")) return apiError("Keine Berechtigung", 403);
 
   const { id } = await params;
   try {
@@ -18,4 +15,4 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   } catch {
     return apiError("Nicht gefunden", 404);
   }
-}
+});

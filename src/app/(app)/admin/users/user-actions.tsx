@@ -22,7 +22,7 @@ export function UserActions({ userId, aktiv }: UserActionsProps) {
   async function patch(data: Record<string, unknown>) {
     setLoading(true);
     try {
-      await fetch(`/api/users/${userId}`, {
+      await fetch(`/api/v1/users/${userId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, LayoutGrid, Settings2, ListChecks, ShoppingCart,
   Users, Key, LogOut, ChevronRight, ChevronLeft, Zap, BookOpen,
-  Menu, X, Activity, Webhook, Code2, PanelLeftClose, PanelLeftOpen,
+  Menu, X, Activity, Webhook, Code2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from "next-auth/react";
@@ -54,7 +54,7 @@ function SidebarContent({
 
   return (
     <>
-      <nav className="flex-1 overflow-y-auto px-2 py-4">
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-4">
         <ul className="space-y-0.5">
           {visibleItems.map((item) => {
             const active = pathname.startsWith(item.href);
@@ -176,24 +176,13 @@ export function Sidebar({ userRolle, userName, userEmail }: SidebarProps) {
   }, [mobileOpen]);
 
   const logoBar = (
-    <div className="flex h-14 shrink-0 items-center border-b px-3 gap-2">
+    <div className={cn("flex h-14 shrink-0 items-center border-b px-3 gap-2", collapsed && "justify-center")}>
       <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary shadow-sm shadow-primary/30 shrink-0">
         <Zap className="h-4 w-4 text-primary-foreground" />
       </div>
       {!collapsed && (
         <span className="font-semibold text-sm flex-1 truncate">Angebots-Engine</span>
       )}
-      <button
-        aria-label={collapsed ? "Sidebar ausklappen" : "Sidebar einklappen"}
-        onClick={toggleCollapse}
-        className="hidden md:flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors shrink-0"
-      >
-        {collapsed ? (
-          <PanelLeftOpen className="h-4 w-4" />
-        ) : (
-          <PanelLeftClose className="h-4 w-4" />
-        )}
-      </button>
     </div>
   );
 
@@ -202,7 +191,7 @@ export function Sidebar({ userRolle, userName, userEmail }: SidebarProps) {
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "hidden md:flex h-screen shrink-0 flex-col border-r bg-card/80 backdrop-blur-sm transition-all duration-300 ease-in-out",
+          "hidden md:flex h-screen shrink-0 flex-col border-r bg-card/80 backdrop-blur-sm transition-all duration-300 ease-in-out relative",
           collapsed ? "w-[60px]" : "w-60"
         )}
       >
@@ -213,6 +202,18 @@ export function Sidebar({ userRolle, userName, userEmail }: SidebarProps) {
           userEmail={userEmail}
           collapsed={collapsed}
         />
+        {/* Toggle handle — sits on the sidebar border, never overlaps content */}
+        <button
+          aria-label={collapsed ? "Sidebar ausklappen" : "Sidebar einklappen"}
+          onClick={toggleCollapse}
+          className="absolute -right-3 top-[18px] z-20 flex h-6 w-6 items-center justify-center rounded-full border bg-card text-muted-foreground shadow-sm hover:bg-accent hover:text-foreground transition-colors"
+        >
+          {collapsed ? (
+            <ChevronRight className="h-3 w-3" />
+          ) : (
+            <ChevronLeft className="h-3 w-3" />
+          )}
+        </button>
       </aside>
 
       {/* Mobile top bar */}

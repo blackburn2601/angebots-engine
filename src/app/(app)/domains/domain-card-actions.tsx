@@ -19,7 +19,7 @@ export function DomainCardActions({ domainId, domainName }: DomainCardActionsPro
     if (!window.confirm(`Domäne „${domainName}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`)) return;
     setDeleting(true);
     try {
-      const res = await fetch(`/api/domains/${domainId}`, { method: "DELETE" });
+      const res = await fetch(`/api/v1/domains/${domainId}`, { method: "DELETE" });
       if (res.ok) router.refresh();
     } finally {
       setDeleting(false);
@@ -29,7 +29,7 @@ export function DomainCardActions({ domainId, domainName }: DomainCardActionsPro
   async function handleDuplicate() {
     setDuplicating(true);
     try {
-      const res = await fetch(`/api/domains/${domainId}/duplicate`, { method: "POST" });
+      const res = await fetch(`/api/v1/domains/${domainId}/duplicate`, { method: "POST" });
       if (res.ok) router.refresh();
     } finally {
       setDuplicating(false);

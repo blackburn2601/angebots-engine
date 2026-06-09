@@ -1,4 +1,12 @@
+import { AsyncLocalStorage } from "async_hooks";
 import { prisma } from "./prisma";
+import { checkApiRateLimit } from "./api-rate-limit";
+
+// Populated by getRequestAuth() inside each handler; read by withLogging() after the handler returns
+export const requestAuthStore = new AsyncLocalStorage<{
+  userId?: string;
+  apiKeyId?: string;
+}>();
 
 export interface LogData {
   method: string;
@@ -38,7 +46,6 @@ export async function logApiRequest(data: LogData): Promise<void> {
       },
     });
   } catch (e) {
-    // Never let logging failures break the application
     console.error("[api-logger] Failed to write log entry:", e);
   }
 }
@@ -46,12 +53,6 @@ export async function logApiRequest(data: LogData): Promise<void> {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RouteHandler = (req: Request, ctx: any) => Promise<Response> | Response;
 
-/**
- * Wraps a Next.js API route handler with request/response logging.
- *
- * Usage:
- *   export const GET = withLogging(async (req) => { ... });
- */
 export function withLogging(
   handler: RouteHandler,
   options?: { captureBody?: boolean }
@@ -65,7 +66,6 @@ export function withLogging(
       req.headers.get("x-real-ip") ??
       "unknown";
 
-    // Capture safe headers (omit auth/cookie values)
     const safeHeaders: Record<string, string> = {};
     req.headers.forEach((v, k) => {
       const lower = k.toLowerCase();
@@ -76,7 +76,8 @@ export function withLogging(
       }
     });
 
-    // Optionally capture body (clone request so it can still be read)
+    const rateLimitPassed = checkApiRateLimit(ip);
+
     let requestBody: unknown;
     let handlerReq = req;
     if (options?.captureBody && ["POST", "PUT", "PATCH"].includes(req.method)) {
@@ -93,22 +94,29 @@ export function withLogging(
       }
     }
 
+    const authContext: { userId?: string; apiKeyId?: string } = {};
     let response: Response;
     let errorMessage: string | undefined;
 
-    try {
-      response = await handler(handlerReq, ctx);
-    } catch (e) {
-      errorMessage = String(e);
-      response = new Response(JSON.stringify({ error: "Internal Server Error" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
+    if (!rateLimitPassed) {
+      response = new Response(JSON.stringify({ error: "Too Many Requests" }), {
+        status: 429,
+        headers: { "Content-Type": "application/json", "Retry-After": "60" },
       });
+    } else {
+      try {
+        response = await requestAuthStore.run(authContext, () => handler(handlerReq, ctx));
+      } catch (e) {
+        errorMessage = String(e);
+        response = new Response(JSON.stringify({ error: "Internal Server Error" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
     }
 
     const duration = Date.now() - start;
 
-    // Fire-and-forget logging
     void logApiRequest({
       method: req.method,
       path: url.pathname,
@@ -117,6 +125,8 @@ export function withLogging(
       requestHeaders: safeHeaders,
       requestBody,
       ip,
+      userId: authContext.userId,
+      apiKeyId: authContext.apiKeyId,
       error: errorMessage,
     });
 

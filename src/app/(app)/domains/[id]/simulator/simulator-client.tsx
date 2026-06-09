@@ -201,7 +201,7 @@ export function SimulatorClient({ config, pricelists }: SimulatorClientProps) {
                     {artikel_nr && (
                       <div className="mt-0.5 text-muted-foreground">
                         <code>{artikel_nr}</code>
-                        {item && <span> — {item.bezeichnung}</span>}
+                        {item && <span> · {item.bezeichnung}</span>}
                       </div>
                     )}
                   </div>

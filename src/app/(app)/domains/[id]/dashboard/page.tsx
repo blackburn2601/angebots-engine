@@ -55,7 +55,7 @@ function buildHealthCheck(config: DomainConfig, pricelistCount: number): CheckIt
   });
 
   if (outputFelder.length === 0) {
-    checks.push({ label: "Regelwerk", status: "ok", message: "Keine berechneten Felder — kein Regelwerk benötigt" });
+    checks.push({ label: "Regelwerk", status: "ok", message: "Keine berechneten Felder, kein Regelwerk benötigt" });
   } else if (ohneRegel.length > 0) {
     checks.push({
       label: "Regelwerk",

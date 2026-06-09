@@ -152,7 +152,7 @@ function RuleRow({ rule, fields, index, total, isFallback, onChange, onDelete, o
               value={rule.verknuepfung ?? "AND"}
               onValueChange={(v: "AND" | "OR") => onChange({ ...rule, verknuepfung: v })}
             >
-              <SelectTrigger className="h-6 w-20 text-xs px-2">
+              <SelectTrigger className="h-6 w-28 text-xs px-2">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -289,7 +289,7 @@ function RegelGruppeCard({ gruppe, fields, onChange, onDelete }: RegelGruppeCard
               </div>
               <span className="text-xs text-muted-foreground">
                 {gruppe.regeln.length} Regel{gruppe.regeln.length !== 1 ? "n" : ""}
-                {!hasFallback && " — "}
+                {!hasFallback && " "}
               </span>
             </div>
             {!hasFallback && (
@@ -314,7 +314,7 @@ function RegelGruppeCard({ gruppe, fields, onChange, onDelete }: RegelGruppeCard
               <Alert variant="warning">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription className="text-xs">
-                  Kein Standardwert definiert — ohne Standardwert bleibt das Feld leer wenn keine Regel passt.{" "}
+                  Kein Standardwert definiert: Ohne Standardwert bleibt das Feld leer, wenn keine Regel passt.{" "}
                   <button className="underline" onClick={addFallback}>Jetzt hinzufügen →</button>
                 </AlertDescription>
               </Alert>
@@ -454,7 +454,7 @@ export function RulesEditor({ domainId, initialConfig }: RulesEditorProps) {
     setSaving(true);
     setError("");
     try {
-      const res = await fetch(`/api/domains/${domainId}`, {
+      const res = await fetch(`/api/v1/domains/${domainId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ config_json: JSON.stringify(config) }),
@@ -526,7 +526,7 @@ export function RulesEditor({ domainId, initialConfig }: RulesEditorProps) {
           {ohneRegel.length > 0 && (
             <div className="rounded-xl border-2 border-dashed p-4">
               <p className="mb-3 text-sm text-muted-foreground">
-                Felder ohne Regel — füge eine Regelgruppe hinzu:
+                Felder ohne Regel. Füge eine Regelgruppe hinzu:
               </p>
               <div className="flex flex-wrap gap-2">
                 {ohneRegel.map((f) => (

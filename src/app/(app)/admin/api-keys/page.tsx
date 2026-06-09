@@ -16,7 +16,7 @@ export default async function ApiKeysPage() {
         <div>
           <h1 className="text-2xl font-semibold">API-Keys</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Für externe Systeme wie n8n — Authentifizierung via Bearer Token
+            Für externe Systeme wie n8n, Authentifizierung via Bearer Token
           </p>
         </div>
         <NewApiKeyDialog />
@@ -24,7 +24,7 @@ export default async function ApiKeysPage() {
 
       {keys.length === 0 ? (
         <div className="rounded-xl border-2 border-dashed p-8 text-center text-sm text-muted-foreground">
-          Noch keine API-Keys — erstelle einen für n8n oder andere externe Systeme
+          Noch keine API-Keys. Erstelle einen für n8n oder andere externe Systeme.
         </div>
       ) : (
         <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
@@ -32,6 +32,7 @@ export default async function ApiKeysPage() {
             <table className="w-full text-sm min-w-[560px]">
               <thead className="border-b bg-muted/30">
                 <tr>
+                  <th className="p-3 text-left font-medium text-muted-foreground">ID</th>
                   <th className="p-3 text-left font-medium text-muted-foreground">Label</th>
                   <th className="p-3 text-left font-medium text-muted-foreground">Präfix</th>
                   <th className="p-3 text-left font-medium text-muted-foreground">Erstellt</th>
@@ -43,6 +44,9 @@ export default async function ApiKeysPage() {
               <tbody className="divide-y">
                 {keys.map((key) => (
                   <tr key={key.id} className="hover:bg-muted/20">
+                    <td className="p-3">
+                      <code className="rounded bg-muted px-2 py-0.5 text-xs font-mono">{key.id}</code>
+                    </td>
                     <td className="p-3 font-medium">{key.label}</td>
                     <td className="p-3">
                       <code className="rounded bg-muted px-2 py-0.5 text-xs">{key.key_prefix}…</code>
