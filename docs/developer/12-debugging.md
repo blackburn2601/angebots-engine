@@ -174,7 +174,7 @@ All `/api/v1/*` calls are logged to the `ApiLog` table. View them:
 Use curl or an HTTP client like Bruno/Postman/Insomnia.
 
 ```bash
-# Get a session cookie first (for internal API):
+# Get a session cookie first (cookie auth — same as the browser UI):
 curl -c cookies.txt -X POST http://localhost:3000/api/auth/callback/credentials \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "email=admin@example.com&password=Admin123!"

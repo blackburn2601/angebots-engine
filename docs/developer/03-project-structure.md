@@ -93,15 +93,12 @@ src/app/
 │   └── docs/               In-app API documentation
 │
 └── api/                    All HTTP API routes
-    ├── auth/[...nextauth]/  NextAuth handler (GET+POST)
-    ├── domains/             Internal domain CRUD
-    ├── pricelists/          Internal pricelist CRUD
-    ├── users/               Internal user CRUD
-    ├── api-keys/            Internal API key management
-    ├── admin/               Internal admin routes (logs, webhooks)
-    └── v1/                  External REST API (Bearer token auth)
+    ├── auth/[...nextauth]/  NextAuth handler (GET+POST) — issues the session cookie
+    └── v1/                  REST API — session cookie (UI) OR Bearer token (external)
         ├── domains/
-        │   └── [id]/run/    POST — run the engine
+        │   └── [id]/
+        │       ├── run/        POST — run the engine
+        │       └── duplicate/  POST — duplicate a domain
         ├── pricelists/
         ├── users/
         ├── api-keys/

@@ -57,23 +57,31 @@
 
 ---
 
-## Two API Surfaces
+## Single API Surface
 
-The application exposes **two distinct API surfaces**:
+All application data is served by **one versioned REST API: `/api/v1/...`**. The same
+routes back both the built-in UI and any external integration — there is no separate
+"internal" API. (The only non-versioned route is the NextAuth handler at `/api/auth/...`,
+which issues and clears the session cookie.)
 
-### 1. Internal API (`/api/...`)
-Used exclusively by the Next.js frontend (server components and client-side `fetch` calls).
+Every `/api/v1` request accepts **either** authentication method:
 
-- Authentication: **Session cookie** (NextAuth JWT)
-- Examples: `/api/domains`, `/api/users`, `/api/domains/[id]`
+- **Session cookie** (NextAuth JWT) — sent automatically by the browser, so the frontend's
+  client-side `fetch` calls are authenticated with no extra headers. (Server Components don't
+  call the API at all — they read from the database directly via the service layer.)
+- **Bearer token** (`Authorization: Bearer eak_live_…`) — an API key (bcrypt-hashed in DB),
+  used by third-party systems (ERP, CRM, external frontends).
 
-### 2. External REST API (`/api/v1/...`)
-A public REST API designed to be called by third-party systems (ERP, CRM, external frontends).
+Each request is checked for a valid session first, then falls back to the Bearer key.
+Additional `/api/v1` behaviour:
 
-- Authentication: **Bearer token** (API key, bcrypt-hashed in DB)
-- CORS configured via `ALLOWED_ORIGIN` environment variable
-- Fully logged to `ApiLog` table
+- CORS configured via the `ALLOWED_ORIGIN` environment variable
+- Fully logged to the `ApiLog` table
 - Examples: `/api/v1/domains`, `/api/v1/domains/[id]/run`
+
+> **History:** earlier versions exposed a second, unversioned "internal" API
+> (`/api/domains`, `/api/users`, …) for the UI. Those routes were removed and consolidated
+> into `/api/v1` — one source of truth per resource.
 
 ---
 

@@ -101,7 +101,9 @@ Accepts `{ inputs: Record<string,unknown>, preis_items?: PreisItem[] }`, returns
 /api/v1/dashboard/stats   GET
 ```
 
-Legacy routes without versioning exist under `/api/` (non-v1) — prefer v1 for new work.
+All resource routes live under `/api/v1/**` — a single surface used by both the UI
+(session cookie) and external clients (Bearer key). The only non-versioned route is the
+NextAuth handler at `/api/auth/**`. (Earlier unversioned "internal" routes were removed.)
 
 ---
 
