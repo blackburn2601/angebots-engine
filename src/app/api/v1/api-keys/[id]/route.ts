@@ -1,15 +1,14 @@
-import { auth } from "@/lib/auth";
 import { ApiKeyService } from "@/services/ApiKeyService";
 import { ok, apiError } from "@/lib/api-response";
+import { getRequestAuth, hasRole } from "@/lib/request-auth";
+import { withLogging } from "@/lib/api-logger";
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth();
-  if (!session?.user) return apiError("Nicht angemeldet", 401);
-  if ((session.user as { rolle: string }).rolle !== "SUPER_ADMIN") {
-    return apiError("Keine Berechtigung", 403);
-  }
+export const DELETE = withLogging(async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
+  const ctx = await getRequestAuth(req);
+  if (!ctx) return apiError("Not logged in", 401);
+  if (!hasRole(ctx, "SUPER_ADMIN")) return apiError("Keine Berechtigung", 403);
 
   const { id } = await params;
   await ApiKeyService.revoke(id);
   return ok({ ok: true });
-}
+});

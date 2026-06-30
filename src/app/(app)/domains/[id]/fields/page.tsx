@@ -17,7 +17,7 @@ export default async function FieldsPage({ params }: { params: Promise<{ id: str
       <div className="mb-6">
         <h2 className="text-xl font-semibold">Felder</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Definiere alle Datenfelder dieser Domäne — Eingaben, Berechnungen und Ergebnisse
+          Definiere alle Datenfelder dieser Domäne: Eingaben, Berechnungen und Ergebnisse
         </p>
       </div>
       <FieldsEditor domainId={id} initialConfig={config} />

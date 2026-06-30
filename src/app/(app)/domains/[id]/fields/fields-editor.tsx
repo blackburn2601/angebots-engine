@@ -139,9 +139,9 @@ function FieldCard({ field, allFields, onChange, onDelete, orderIssues, isDragOv
               <div className="space-y-1.5">
                 <Label>
                   Interner Name
-                  {!keyManuallyEdited && <span className="ml-2 text-xs text-muted-foreground">— auto</span>}
-                  {isDuplicate && <span className="ml-2 text-xs text-destructive">— bereits vergeben</span>}
-                  {keyError && field.key && <span className="ml-2 text-xs text-destructive">— {keyError}</span>}
+                  {!keyManuallyEdited && <span className="ml-2 text-xs text-muted-foreground">(auto)</span>}
+                  {isDuplicate && <span className="ml-2 text-xs text-destructive">(bereits vergeben)</span>}
+                  {keyError && field.key && <span className="ml-2 text-xs text-destructive">({keyError})</span>}
                 </Label>
                 <Input
                   placeholder="z.B. laenge"
@@ -170,7 +170,7 @@ function FieldCard({ field, allFields, onChange, onDelete, orderIssues, isDragOv
                       <div className="flex items-center gap-2">
                         <cfg.icon className="h-4 w-4" />
                         <span>{cfg.label}</span>
-                        <span className="text-xs text-muted-foreground">— {cfg.description}</span>
+                        <span className="text-xs text-muted-foreground">· {cfg.description}</span>
                       </div>
                     </SelectItem>
                   ))}
@@ -190,10 +190,10 @@ function FieldCard({ field, allFields, onChange, onDelete, orderIssues, isDragOv
                     }}
                   >
                     <SelectTrigger className="h-9 text-sm">
-                      <SelectValue placeholder="— keine —" />
+                      <SelectValue placeholder="Keine" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__none__">— keine —</SelectItem>
+                      <SelectItem value="__none__">Keine</SelectItem>
                       {UNIT_PRESETS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
                       <SelectItem value="__custom__">Eigene…</SelectItem>
                     </SelectContent>
@@ -257,7 +257,7 @@ function FieldCard({ field, allFields, onChange, onDelete, orderIssues, isDragOv
                         <p className="font-medium">Berechnungsreihenfolge</p>
                         <p className={cn("mt-0.5", anyBreaking ? "text-red-700" : "text-amber-700")}>
                           {deps.map((d) => `„${d.label}"`).join(", ")}{" "}
-                          {deps.length === 1 ? "steht" : "stehen"} weiter unten —{" "}
+                          {deps.length === 1 ? "steht" : "stehen"} weiter unten,{" "}
                           {anyBreaking
                             ? "das Ergebnis wird falsch berechnet."
                             : "zur Übersichtlichkeit nach oben verschieben."}
@@ -327,11 +327,11 @@ function FieldCard({ field, allFields, onChange, onDelete, orderIssues, isDragOv
                       onValueChange={(v) => onChange({ ...field, standard: v === "__none__" ? undefined : v })}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="— kein Standard —" />
+                        <SelectValue placeholder="Kein Standard" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="__none__">— kein Standard —</SelectItem>
-                        {(field.optionen ?? []).map((opt) => (
+                        <SelectItem value="__none__">Kein Standard</SelectItem>
+                        {(field.optionen ?? []).filter(Boolean).map((opt) => (
                           <SelectItem key={opt} value={opt}>{opt}</SelectItem>
                         ))}
                       </SelectContent>
@@ -435,7 +435,7 @@ export function FieldsEditor({ domainId, initialConfig }: FieldsEditorProps) {
     setSaving(true);
     setError("");
     try {
-      const res = await fetch(`/api/domains/${domainId}`, {
+      const res = await fetch(`/api/v1/domains/${domainId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ config_json: JSON.stringify(config) }),
@@ -532,7 +532,7 @@ export function FieldsEditor({ domainId, initialConfig }: FieldsEditorProps) {
                 ? "1 Berechnungsfeld referenziert Felder,"
                 : `${affectedCount} Berechnungsfelder referenzieren Felder,`}{" "}
               {hasEngineBreaking
-                ? "die weiter unten stehen — das Ergebnis wird falsch berechnet."
+                ? "die weiter unten stehen. Das Ergebnis wird falsch berechnet."
                 : "die zur Übersichtlichkeit weiter oben stehen sollten."}
             </span>
           </p>
@@ -556,7 +556,7 @@ export function FieldsEditor({ domainId, initialConfig }: FieldsEditorProps) {
       {config.felder.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed py-16 text-center">
           <p className="text-sm text-muted-foreground mb-4">
-            Lege dein erstes Feld an — z.B. die Länge oder das Material
+            Lege dein erstes Feld an, z.B. die Länge oder das Material
           </p>
           <Button onClick={addField}>
             <Plus className="h-4 w-4" />

@@ -1,8 +1,8 @@
-import { NextRequest } from "next/server";
-import { requireRole } from "@/lib/auth-helpers";
 import { z } from "zod";
 import { WebhookService } from "@/services/WebhookService";
 import { ok, apiError } from "@/lib/api-response";
+import { getRequestAuth, hasRole } from "@/lib/request-auth";
+import { withLogging } from "@/lib/api-logger";
 
 const patchSchema = z.object({
   label: z.string().min(1).max(100).optional(),
@@ -11,22 +11,26 @@ const patchSchema = z.object({
   aktiv: z.boolean().optional(),
 });
 
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  await requireRole("SUPER_ADMIN", "DOMAIN_ADMIN");
+export const PATCH = withLogging(async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
+  const ctx = await getRequestAuth(req);
+  if (!ctx) return apiError("Not logged in", 401);
+  if (!hasRole(ctx, "SUPER_ADMIN", "DOMAIN_ADMIN")) return apiError("Keine Berechtigung", 403);
 
   const { id } = await params;
-  const body = await req.json();
+  const body = await req.json().catch(() => null);
   const parsed = patchSchema.safeParse(body);
-  if (!parsed.success) return apiError("Ungültige Eingabe", 400);
+  if (!parsed.success) return apiError("Missing or invalid input parameters", 400);
 
   const webhook = await WebhookService.update(id, parsed.data);
   return ok(webhook);
-}
+}, { captureBody: true });
 
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  await requireRole("SUPER_ADMIN", "DOMAIN_ADMIN");
+export const DELETE = withLogging(async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
+  const ctx = await getRequestAuth(req);
+  if (!ctx) return apiError("Not logged in", 401);
+  if (!hasRole(ctx, "SUPER_ADMIN", "DOMAIN_ADMIN")) return apiError("Keine Berechtigung", 403);
 
   const { id } = await params;
   await WebhookService.delete(id);
   return ok({ ok: true });
-}
+});

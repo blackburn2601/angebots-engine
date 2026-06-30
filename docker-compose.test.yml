@@ -1,0 +1,24 @@
+# Disposable PostgreSQL for the test suite ONLY.
+#
+# - Runs on port 5433 (NOT 5432) so it can never be confused with the dev DB.
+# - Database name ends in "_test" — required by the test guard (assert-test-db.ts).
+# - Data lives in tmpfs (RAM): it is wiped on every container stop and can
+#   physically never hold real/dev data. Truncating it is harmless.
+#
+# Start it with:  npm run test:db:up   (or: docker compose -f docker-compose.test.yml up -d --wait)
+services:
+  postgres-test:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: angebots
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: angebots_engine_test
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U angebots -d angebots_engine_test"]
+      interval: 3s
+      timeout: 3s
+      retries: 20

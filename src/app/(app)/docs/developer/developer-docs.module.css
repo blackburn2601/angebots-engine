@@ -1,0 +1,148 @@
+/* Prose styling for server-rendered markdown HTML (no typography plugin).
+   Uses the app's design tokens so it follows the active theme. */
+
+.doc {
+  color: var(--foreground);
+  font-size: 0.925rem;
+  line-height: 1.7;
+}
+
+.doc h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0 0 1.25rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.doc h2 {
+  font-size: 1.375rem;
+  font-weight: 600;
+  margin: 2.25rem 0 1rem;
+}
+
+.doc h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 1.75rem 0 0.75rem;
+}
+
+.doc h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.5rem;
+}
+
+.doc p {
+  margin: 0.85rem 0;
+}
+
+.doc a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.doc a:hover {
+  opacity: 0.8;
+}
+
+.doc strong {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.doc ul,
+.doc ol {
+  margin: 0.85rem 0;
+  padding-left: 1.5rem;
+}
+
+.doc ul { list-style: disc; }
+.doc ol { list-style: decimal; }
+
+.doc li {
+  margin: 0.35rem 0;
+}
+
+.doc li > ul,
+.doc li > ol {
+  margin: 0.35rem 0;
+}
+
+/* Inline code */
+.doc code {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.85em;
+  background: var(--muted);
+  color: var(--foreground);
+  padding: 0.15em 0.4em;
+  border-radius: var(--radius-sm, 0.25rem);
+  border: 1px solid var(--border);
+}
+
+/* Code blocks */
+.doc pre {
+  margin: 1.1rem 0;
+  padding: 1rem 1.1rem;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 0.5rem);
+  overflow-x: auto;
+  font-size: 0.825rem;
+  line-height: 1.6;
+}
+
+.doc pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  white-space: pre;
+}
+
+.doc blockquote {
+  margin: 1.1rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 3px solid var(--primary);
+  background: color-mix(in srgb, var(--primary) 6%, transparent);
+  color: var(--muted-foreground);
+  border-radius: 0 var(--radius-sm, 0.25rem) var(--radius-sm, 0.25rem) 0;
+}
+
+.doc blockquote p { margin: 0.35rem 0; }
+
+.doc hr {
+  margin: 2rem 0;
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+/* Tables */
+.doc table {
+  width: 100%;
+  margin: 1.1rem 0;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  display: block;
+  overflow-x: auto;
+}
+
+.doc th,
+.doc td {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.doc th {
+  background: var(--muted);
+  font-weight: 600;
+}
+
+.doc img {
+  max-width: 100%;
+  height: auto;
+}

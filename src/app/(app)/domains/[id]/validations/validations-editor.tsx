@@ -263,13 +263,13 @@ function ValidationCard({ val, fields, onChange, onDelete }: ValidationCardProps
                     <SelectItem value="fehler">
                       <div className="flex items-center gap-2">
                         <XCircle className="h-3.5 w-3.5 text-destructive" />
-                        Fehler — blockiert das Absenden
+                        Fehler (blockiert das Absenden)
                       </div>
                     </SelectItem>
                     <SelectItem value="warnung">
                       <div className="flex items-center gap-2">
                         <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
-                        Warnung — zeigt Hinweis, blockiert nicht
+                        Warnung (zeigt Hinweis, blockiert nicht)
                       </div>
                     </SelectItem>
                   </SelectContent>
@@ -386,7 +386,7 @@ export function ValidationsEditor({ domainId, initialConfig }: ValidationsEditor
     setSaving(true);
     setError("");
     try {
-      const res = await fetch(`/api/domains/${domainId}`, {
+      const res = await fetch(`/api/v1/domains/${domainId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ config_json: JSON.stringify(config) }),
@@ -423,7 +423,7 @@ export function ValidationsEditor({ domainId, initialConfig }: ValidationsEditor
       {validierungen.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed py-16 text-center">
           <p className="text-sm text-muted-foreground mb-4">
-            Noch keine Validierungen — lege eine Fehler- oder Warnungsregel an
+            Noch keine Validierungen. Lege eine Fehler- oder Warnungsregel an.
           </p>
           <Button onClick={addValidierung}>
             <Plus className="h-4 w-4" />

@@ -22,14 +22,14 @@ export function NewApiKeyDialog() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/api-keys", {
+      const res = await fetch("/api/v1/api-keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ label }),
       });
       if (!res.ok) { const d = await res.json(); setError(d.error ?? "Fehler"); return; }
       const data = await res.json();
-      setNewKey(data.key);
+      setNewKey(data.data.key);
       router.refresh();
     } catch {
       setError("Fehler");
@@ -65,7 +65,7 @@ export function NewApiKeyDialog() {
           <div className="space-y-4 mt-2">
             <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-4">
               <p className="text-sm font-medium text-emerald-800 mb-2">
-                Key wurde erstellt — kopiere ihn jetzt. Er wird nicht erneut angezeigt.
+                Key wurde erstellt. Kopiere ihn jetzt, er wird nicht erneut angezeigt.
               </p>
               <div className="flex items-center gap-2">
                 <code className="flex-1 break-all rounded bg-white border px-3 py-2 text-xs font-mono">

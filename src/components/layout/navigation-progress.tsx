@@ -22,7 +22,7 @@ export function NavigationProgress() {
   }
 
   function finish() {
-    if (tickRef.current) clearInterval(tickRef.current);
+    if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
     setProgress(100);
     completeRef.current = setTimeout(() => {
       setVisible(false);

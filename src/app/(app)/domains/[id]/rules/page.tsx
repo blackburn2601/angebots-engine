@@ -17,7 +17,7 @@ export default async function RulesPage({ params }: { params: Promise<{ id: stri
       <div className="mb-6">
         <h2 className="text-xl font-semibold">Regelwerk</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Lege fest, welche Werte automatisch berechnet werden — basierend auf den Eingaben des Nutzers
+          Lege fest, welche Werte automatisch berechnet werden, basierend auf den Eingaben des Nutzers
         </p>
       </div>
       <RulesEditor domainId={id} initialConfig={config} />

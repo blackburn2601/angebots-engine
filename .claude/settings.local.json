@@ -37,7 +37,16 @@
       "Bash(git pull *)",
       "Bash(git stash *)",
       "Bash(xxd)",
-      "Bash(python3 *)"
+      "Bash(python3 *)",
+      "Read(//Users/sebbo/Applications/Github/angebots-engine-migration/**)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(docker compose *)",
+      "Bash(docker volume *)",
+      "Bash(docker exec *)",
+      "Bash(printenv DATABASE_URL)",
+      "Bash(npm test *)",
+      "Bash(DATABASE_URL=\"postgresql://angebots:secret@localhost:5432/angebots_engine\" npx vitest run src/__tests__/services/domain.service.test.ts)",
+      "Bash(git diff *)"
     ]
   }
 }

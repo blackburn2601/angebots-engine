@@ -122,8 +122,8 @@ const sections = [
   { id: "form", label: "Formular", icon: FileText },
   { id: "rules", label: "Regelwerk", icon: Zap },
   { id: "validations", label: "Validierungen", icon: ShieldAlert },
-  { id: "components", label: "Komponenten", icon: Package },
   { id: "pricelists", label: "Preislisten", icon: ListChecks },
+  { id: "components", label: "Komponenten", icon: Package },
   { id: "simulator", label: "Simulator", icon: PlayCircle },
   { id: "configurator", label: "Konfigurator", icon: ShoppingCart },
   { id: "api", label: "API v1", icon: Globe },
@@ -132,7 +132,7 @@ const sections = [
 
 // Keywords for each section used in search
 const SECTION_KEYWORDS: Record<string, string[]> = {
-  overview: ["überblick", "einführung", "architektur", "was ist"],
+  overview: ["überblick", "einführung", "architektur", "was ist", "reihenfolge", "schritt"],
   roles: ["rollen", "berechtigungen", "rechte", "super admin", "domain admin", "verkäufer"],
   domains: ["domänen", "domain", "konfiguration", "bereiche", "duplizieren"],
   fields: ["felder", "typen", "formel", "ausgabe", "zahl", "text", "select", "boolean", "formula", "output"],
@@ -244,7 +244,7 @@ export function DocsClient({ userRolle }: DocsClientProps) {
             </div>
             <h1 className="text-3xl font-bold text-foreground">Dokumentation</h1>
             <p className="mt-2 text-base text-muted-foreground max-w-xl">
-              Alles was du wissen musst — von der Grundkonfiguration bis zur API-Integration.
+              Alles was du wissen musst, von der Grundkonfiguration bis zur API-Integration.
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2">
@@ -280,36 +280,25 @@ export function DocsClient({ userRolle }: DocsClientProps) {
 
             <p className="text-sm text-muted-foreground leading-relaxed">
               Die <strong className="text-foreground">Angebots-Engine</strong> ist ein konfigurierbares System zur automatisierten Angebotserstellung.
-              Statt jedes Angebot manuell zu kalkulieren, definierst du einmal die Berechnungslogik — und der Konfigurator erledigt den Rest.
+              Statt jedes Angebot manuell zu kalkulieren, definierst du einmal die Berechnungslogik, und der Konfigurator erledigt den Rest.
             </p>
 
             {/* Architecture visual */}
             <div className="rounded-2xl border bg-card p-6">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-5">Wie alles zusammenhängt</p>
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                {[
-                  { icon: Sliders, label: "Felder", sub: "Daten & Formeln", color: "bg-blue-100 text-blue-600" },
-                  { icon: FileText, label: "Formular", sub: "Eingabemaske", color: "bg-violet-100 text-violet-600" },
-                  { icon: Zap, label: "Regelwerk", sub: "Berechnungen", color: "bg-amber-100 text-amber-600" },
-                  { icon: ShieldAlert, label: "Validierung", sub: "Fehlerprüfung", color: "bg-rose-100 text-rose-600" },
-                  { icon: Package, label: "Komponenten", sub: "Kalkulation", color: "bg-emerald-100 text-emerald-600" },
-                ].map((item, i, arr) => (
-                  <div key={item.label} className="flex items-center gap-2">
-                    <div className="flex flex-col items-center gap-1.5 text-center">
-                      <div className={cn("flex h-10 w-10 items-center justify-center rounded-xl", item.color)}>
-                        <item.icon className="h-5 w-5" />
-                      </div>
-                      <p className="text-xs font-medium">{item.label}</p>
-                      <p className="text-[10px] text-muted-foreground">{item.sub}</p>
-                    </div>
-                    {i < arr.length - 1 && <ArrowRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />}
-                  </div>
-                ))}
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-5">Konfigurationsreihenfolge</p>
+              <div className="space-y-0">
+                <FlowStep number={1} title="Felder anlegen" description="Alle Variablen der Domäne definieren: Eingaben (number, text, select, boolean), Formeln (formula) und Ausgaben (output). Formeln und Ausgaben werden durch Regelwerk befüllt." />
+                <FlowStep number={2} title="Formular konfigurieren" description="Festlegen welche Felder der Nutzer sieht, in welcher Reihenfolge und ob Felder nur unter bestimmten Bedingungen sichtbar sind." />
+                <FlowStep number={3} title="Regelwerk aufbauen" description="Berechnungsregeln für output-Felder definieren: Welcher Wert wird gesetzt, wenn welche Bedingung zutrifft." />
+                <FlowStep number={4} title="Validierungen hinzufügen" description="Fehler und Warnungen definieren, die bei ungültigen Eingaben angezeigt werden sollen." />
+                <FlowStep number={5} title="Preisliste anlegen und verknüpfen" description="Artikel mit Einkaufspreisen importieren und die Preisliste der Domäne zuweisen. Voraussetzung für Komponenten." />
+                <FlowStep number={6} title="Komponenten konfigurieren" description="Felder mit Preislisten-Artikeln verknüpfen. Jede Komponente wird nur aktiviert wenn ihre Bedingungen erfüllt sind." />
+                <FlowStep number={7} title="Im Simulator testen" description="Testdaten eingeben und prüfen ob alle Berechnungen, Regeln und Komponenten wie erwartet funktionieren." />
               </div>
             </div>
 
-            <Callout type="tip">
-              Beginne immer mit dem Anlegen der <strong>Felder</strong>, da alle anderen Bausteine (Formular, Regelwerk, Komponenten) auf Feldern aufbauen.
+            <Callout type="warning">
+              Die Reihenfolge ist wichtig: Felder zuerst, Preislisten vor Komponenten. Ohne Felder kann kein Formular, Regelwerk oder Komponenten konfiguriert werden.
             </Callout>
           </section>
 
@@ -439,7 +428,7 @@ export function DocsClient({ userRolle }: DocsClientProps) {
               </div>
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Eine <strong className="text-foreground">Domäne</strong> ist ein vollständig konfigurierter Berechnungsbereich — z.B. „Photovoltaikanlage" oder „Dachfenster".
+                  Eine <strong className="text-foreground">Domäne</strong> ist ein vollständig konfigurierter Berechnungsbereich, z.B. „Photovoltaikanlage" oder „Dachfenster".
                   Jede Domäne enthält eigene Felder, Formeln, Regeln und Komponenten.
                 </p>
                 <p className="text-sm text-muted-foreground">
@@ -448,29 +437,8 @@ export function DocsClient({ userRolle }: DocsClientProps) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              {[
-                { icon: Sliders, label: "Felder", desc: "Variablen & Formeln definieren" },
-                { icon: FileText, label: "Formular", desc: "Eingabefelder festlegen" },
-                { icon: Zap, label: "Regelwerk", desc: "Berechnungsregeln" },
-                { icon: ShieldAlert, label: "Validierungen", desc: "Fehler & Warnungen" },
-                { icon: Package, label: "Komponenten", desc: "Artikel-Logik" },
-                { icon: PlayCircle, label: "Simulator", desc: "Live-Test" },
-              ].map(({ icon: Icon, label, desc }) => (
-                <div key={label} className="rounded-xl border bg-card p-4 flex items-start gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 shrink-0">
-                    <Icon className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">{label}</p>
-                    <p className="text-xs text-muted-foreground">{desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <Callout type="info">
-              <strong>Tipp:</strong> Du kannst eine bestehende Domäne duplizieren, um schnell eine ähnliche Konfiguration als Ausgangspunkt zu nutzen.
+            <Callout type="tip">
+              <strong>Tipp:</strong> Du kannst eine bestehende Domäne duplizieren, um schnell eine ähnliche Konfiguration als Ausgangspunkt zu nutzen. Die vollständige Konfigurationsreihenfolge findest du im <a href="#overview" className="underline font-medium">Überblick</a>.
             </Callout>
           </section>
 
@@ -478,7 +446,11 @@ export function DocsClient({ userRolle }: DocsClientProps) {
 
           {/* ── FIELDS ── */}
           <section className="space-y-6">
-            <SectionHeading id="fields" icon={Sliders} title="Felder & Typen" subtitle="Die Bausteine jeder Konfiguration — Eingaben, Berechnungen, Ausgaben" />
+            <SectionHeading id="fields" icon={Sliders} title="Felder & Typen" subtitle="Die Bausteine jeder Konfiguration: Eingaben, Berechnungen, Ausgaben" />
+
+            <Callout type="info">
+              <strong>Schritt 1 von 7.</strong> Felder sind die Grundlage. Alle anderen Bausteine (Formular, Regelwerk, Komponenten) referenzieren Felder. Lege hier zuerst alle Variablen der Domäne an, bevor du weiter konfigurierst.
+            </Callout>
 
             <p className="text-sm text-muted-foreground leading-relaxed">
               Felder sind die <strong className="text-foreground">Variablen</strong> deiner Konfiguration. Jedes Feld hat einen eindeutigen Schlüssel (<code className="text-xs bg-muted px-1 rounded">key</code>),
@@ -569,6 +541,10 @@ dachflaeche > 50 ? dachflaeche * 1.1 : dachflaeche`}</CodeBlock>
           <section className="space-y-6">
             <SectionHeading id="form" icon={FileText} title="Formular" subtitle="Bestimmt welche Felder der Nutzer im Konfigurator eingeben kann" />
 
+            <Callout type="info">
+              <strong>Schritt 2 von 7.</strong> Alle Felder müssen bereits angelegt sein. Im Formular-Tab wählst du aus, welche davon der Nutzer sieht.
+            </Callout>
+
             <p className="text-sm text-muted-foreground">
               Nicht alle Felder sind Eingabefelder. Im Formular-Tab wählst du aus, welche Felder dem Nutzer angezeigt werden,
               in welcher Reihenfolge sie erscheinen, und ob einzelne Felder nur unter bestimmten Bedingungen sichtbar sind.
@@ -605,11 +581,45 @@ dachflaeche > 50 ? dachflaeche * 1.1 : dachflaeche`}</CodeBlock>
           <section className="space-y-6">
             <SectionHeading id="rules" icon={Zap} title="Regelwerk" subtitle="Automatische Berechnungen basierend auf Bedingungen" />
 
+            <Callout type="info">
+              <strong>Schritt 3 von 7.</strong> Das Regelwerk befüllt <strong>output</strong>-Felder basierend auf Bedingungen. Output-Felder müssen zuerst im Felder-Tab angelegt worden sein.
+            </Callout>
+
             <p className="text-sm text-muted-foreground leading-relaxed">
               Das Regelwerk erlaubt es, Felder <strong className="text-foreground">bedingt</strong> zu befüllen.
               Du definierst: „Wenn Bedingung X erfüllt ist, setze Feld Y auf Wert Z."
-              Das System prüft die Regeln und gibt dem ersten zutreffenden Wert Vorrang (<em>erste zutreffende Regel gewinnt</em>).
+              Das System prüft die Regeln von oben nach unten und gibt dem <strong className="text-foreground">ersten zutreffenden Wert Vorrang</strong>. Die restlichen Regeln werden dann nicht mehr geprüft.
             </p>
+
+            <div className="rounded-2xl border bg-card p-5 space-y-3">
+              <p className="text-sm font-semibold flex items-center gap-2"><Zap className="h-4 w-4 text-primary" /> Wie die Engine Regeln auswertet</p>
+              <div className="space-y-2 text-xs text-muted-foreground">
+                <div className="flex gap-3 items-start">
+                  <div className="h-5 w-5 rounded-full bg-blue-100 text-blue-600 text-[10px] flex items-center justify-center font-bold shrink-0 mt-0.5">1</div>
+                  <p><strong className="text-foreground">Eingaben</strong> des Nutzers werden eingesammelt (alle Formularfelder).</p>
+                </div>
+                <div className="flex gap-3 items-start">
+                  <div className="h-5 w-5 rounded-full bg-blue-100 text-blue-600 text-[10px] flex items-center justify-center font-bold shrink-0 mt-0.5">2</div>
+                  <p><strong className="text-foreground">Formelfelder</strong> (<code className="bg-muted px-1 rounded">formula</code>) werden berechnet, in der Reihenfolge wie sie in der Feldliste stehen (oben nach unten).</p>
+                </div>
+                <div className="flex gap-3 items-start">
+                  <div className="h-5 w-5 rounded-full bg-blue-100 text-blue-600 text-[10px] flex items-center justify-center font-bold shrink-0 mt-0.5">3</div>
+                  <p><strong className="text-foreground">Regelgruppen</strong> werden ausgewertet: Für jedes <code className="bg-muted px-1 rounded">output</code>-Feld wird die erste passende Regel angewendet. Trifft keine Regel zu, greift der Standardwert.</p>
+                </div>
+                <div className="flex gap-3 items-start">
+                  <div className="h-5 w-5 rounded-full bg-blue-100 text-blue-600 text-[10px] flex items-center justify-center font-bold shrink-0 mt-0.5">4</div>
+                  <p><strong className="text-foreground">Freitext-Regeln</strong> werden geprüft: Alle Regeln, bei denen die Bedingung zutrifft, erzeugen einen Hinweistext für den Nutzer. Es gewinnt nicht nur eine, sondern alle passenden Texte werden angezeigt.</p>
+                </div>
+                <div className="flex gap-3 items-start">
+                  <div className="h-5 w-5 rounded-full bg-blue-100 text-blue-600 text-[10px] flex items-center justify-center font-bold shrink-0 mt-0.5">5</div>
+                  <p><strong className="text-foreground">Validierungen</strong> werden geprüft: Fehler blockieren das Absenden, Warnungen werden als Hinweis angezeigt.</p>
+                </div>
+                <div className="flex gap-3 items-start">
+                  <div className="h-5 w-5 rounded-full bg-blue-100 text-blue-600 text-[10px] flex items-center justify-center font-bold shrink-0 mt-0.5">6</div>
+                  <p><strong className="text-foreground">Komponenten</strong> werden aktiviert: Jede Komponente prüft ihre Aktivierungsbedingung. Wenn sie zutrifft, wird der passende Artikel aus der Preisliste ausgewählt und mit dem Menge-Feld multipliziert.</p>
+                </div>
+              </div>
+            </div>
 
             <div className="rounded-2xl border bg-card p-5 space-y-4">
               <p className="text-sm font-semibold">Beispiel: Modulanzahl-Berechnung</p>
@@ -641,7 +651,8 @@ dachflaeche > 50 ? dachflaeche * 1.1 : dachflaeche`}</CodeBlock>
                 <AlertTriangle className="h-4 w-4 text-amber-500" /> Freitext-Regeln
               </p>
               <p className="text-xs text-muted-foreground">
-                Neben Berechnungsregeln gibt es <strong>Freitext-Regeln</strong>: Texte, die dem Nutzer im Konfigurator angezeigt werden, wenn eine Bedingung zutrifft — z.B. Hinweise, Empfehlungen oder Warnmeldungen.
+                Neben Berechnungsregeln gibt es <strong>Freitext-Regeln</strong>: Texte, die dem Nutzer im Konfigurator angezeigt werden, wenn eine Bedingung zutrifft, z.B. Hinweise, Empfehlungen oder Warnmeldungen.
+                Im Gegensatz zu Berechnungsregeln (wo nur die erste Regel gewinnt) werden <strong>alle zutreffenden Freitext-Regeln</strong> gleichzeitig angezeigt.
               </p>
             </div>
           </section>
@@ -651,6 +662,10 @@ dachflaeche > 50 ? dachflaeche * 1.1 : dachflaeche`}</CodeBlock>
           {/* ── VALIDATIONS ── */}
           <section className="space-y-6">
             <SectionHeading id="validations" icon={ShieldAlert} title="Validierungen" subtitle="Fehler und Warnungen zum Schutz vor ungültigen Eingaben" />
+
+            <Callout type="info">
+              <strong>Schritt 4 von 7.</strong> Validierungen referenzieren Felder. Alle relevanten Felder müssen zuerst angelegt sein.
+            </Callout>
 
             <p className="text-sm text-muted-foreground">
               Validierungen prüfen die Eingaben des Nutzers und zeigen Meldungen an, wenn Bedingungen erfüllt sind.
@@ -679,7 +694,7 @@ dachflaeche > 50 ? dachflaeche * 1.1 : dachflaeche`}</CodeBlock>
                   Zeigt einen Hinweis an, blockiert aber nicht. Gut für Grenzwerte oder unübliche Kombinationen.
                 </p>
                 <div className="rounded-lg bg-amber-100 border border-amber-200 px-3 py-2 text-xs text-amber-700 font-mono">
-                  WENN laenge &gt; 50 → „Sehr große Länge — prüfen?"
+                  WENN laenge &gt; 50 → „Sehr große Länge, prüfen?"
                 </div>
               </div>
             </div>
@@ -691,58 +706,13 @@ dachflaeche > 50 ? dachflaeche * 1.1 : dachflaeche`}</CodeBlock>
 
           <Separator />
 
-          {/* ── COMPONENTS ── */}
-          <section className="space-y-6">
-            <SectionHeading id="components" icon={Package} title="Komponenten" subtitle="Verknüpfe Felder mit Preislisten-Artikeln für die automatische Kalkulation" />
-
-            <p className="text-sm text-muted-foreground">
-              Komponenten verbinden Berechnungen mit echten Artikeln aus deinen Preislisten. Jede Komponente wird aktiviert, wenn bestimmte Bedingungen erfüllt sind,
-              und wählt basierend auf Varianten den passenden Artikel aus.
-            </p>
-
-            <div className="rounded-2xl border bg-card p-5 space-y-4">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Aufbau einer Komponente</p>
-              <div className="space-y-3">
-                <div className="flex gap-3">
-                  <div className="h-6 w-6 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">1</div>
-                  <div>
-                    <p className="text-sm font-medium">Aktivierungsbedingung</p>
-                    <p className="text-xs text-muted-foreground">Die Komponente wird nur in die Kalkulation aufgenommen, wenn alle Aktivierungsregeln erfüllt sind.</p>
-                    <div className="mt-1 rounded bg-muted px-2 py-1 text-xs font-mono text-muted-foreground">hat_speicher == true</div>
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <div className="h-6 w-6 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">2</div>
-                  <div>
-                    <p className="text-sm font-medium">Menge-Feld</p>
-                    <p className="text-xs text-muted-foreground">Ein Feld, das angibt, wie oft dieser Artikel benötigt wird (z.B. Anzahl Module).</p>
-                    <div className="mt-1 rounded bg-muted px-2 py-1 text-xs font-mono text-muted-foreground">menge_feld: anzahl_module</div>
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <div className="h-6 w-6 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">3</div>
-                  <div>
-                    <p className="text-sm font-medium">Varianten</p>
-                    <p className="text-xs text-muted-foreground">Je nach Bedingung wird ein anderer Artikel aus der Preisliste gewählt.</p>
-                    <div className="mt-1 space-y-1">
-                      <div className="rounded bg-muted px-2 py-1 text-xs font-mono text-muted-foreground">WENN modultyp == "Premium" → ART-001</div>
-                      <div className="rounded bg-muted px-2 py-1 text-xs font-mono text-muted-foreground">Standard → ART-002</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <Callout type="info">
-              Im <strong>Simulator</strong> siehst du welche Komponenten aktiv sind, wie viele Einheiten berechnet werden und den resultierenden Einkaufspreis.
-            </Callout>
-          </section>
-
-          <Separator />
-
           {/* ── PRICELISTS ── */}
           <section className="space-y-6">
             <SectionHeading id="pricelists" icon={ListChecks} title="Preislisten" subtitle="Verwalte Artikel mit Einkaufspreisen und verknüpfe sie mit Domänen" />
+
+            <Callout type="info">
+              <strong>Schritt 5 von 7.</strong> Preislisten müssen vor den Komponenten angelegt sein, da Komponenten Artikel aus einer Preisliste referenzieren.
+            </Callout>
 
             <div className="flex items-start gap-4 rounded-2xl border bg-card p-5">
               <ListChecks className="h-8 w-8 text-primary mt-1 shrink-0" />
@@ -790,9 +760,66 @@ dachflaeche > 50 ? dachflaeche * 1.1 : dachflaeche`}</CodeBlock>
 
           <Separator />
 
+          {/* ── COMPONENTS ── */}
+          <section className="space-y-6">
+            <SectionHeading id="components" icon={Package} title="Komponenten" subtitle="Verknüpfe Felder mit Preislisten-Artikeln für die automatische Kalkulation" />
+
+            <Callout type="warning">
+              <strong>Schritt 6 von 7. Voraussetzung:</strong> Eine Preisliste muss bereits angelegt und der Domäne zugewiesen sein. Außerdem muss ein Feld existieren, das die Menge liefert (z.B. <code className="bg-white/60 px-1 rounded text-[11px]">anzahl_module</code>).
+            </Callout>
+
+            <p className="text-sm text-muted-foreground">
+              Komponenten verbinden Berechnungen mit echten Artikeln aus deinen Preislisten. Jede Komponente wird aktiviert, wenn bestimmte Bedingungen erfüllt sind,
+              und wählt basierend auf Varianten den passenden Artikel aus.
+            </p>
+
+            <div className="rounded-2xl border bg-card p-5 space-y-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Aufbau einer Komponente</p>
+              <div className="space-y-3">
+                <div className="flex gap-3">
+                  <div className="h-6 w-6 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">1</div>
+                  <div>
+                    <p className="text-sm font-medium">Aktivierungsbedingung</p>
+                    <p className="text-xs text-muted-foreground">Die Komponente wird nur in die Kalkulation aufgenommen, wenn alle Aktivierungsregeln erfüllt sind.</p>
+                    <div className="mt-1 rounded bg-muted px-2 py-1 text-xs font-mono text-muted-foreground">hat_speicher == true</div>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <div className="h-6 w-6 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">2</div>
+                  <div>
+                    <p className="text-sm font-medium">Menge-Feld</p>
+                    <p className="text-xs text-muted-foreground">Ein Feld, das angibt, wie oft dieser Artikel benötigt wird (z.B. Anzahl Module).</p>
+                    <div className="mt-1 rounded bg-muted px-2 py-1 text-xs font-mono text-muted-foreground">menge_feld: anzahl_module</div>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <div className="h-6 w-6 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">3</div>
+                  <div>
+                    <p className="text-sm font-medium">Varianten</p>
+                    <p className="text-xs text-muted-foreground">Je nach Bedingung wird ein anderer Artikel aus der Preisliste gewählt.</p>
+                    <div className="mt-1 space-y-1">
+                      <div className="rounded bg-muted px-2 py-1 text-xs font-mono text-muted-foreground">WENN modultyp == "Premium" → ART-001</div>
+                      <div className="rounded bg-muted px-2 py-1 text-xs font-mono text-muted-foreground">Standard → ART-002</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Callout type="info">
+              Im <strong>Simulator</strong> siehst du welche Komponenten aktiv sind, wie viele Einheiten berechnet werden und den resultierenden Einkaufspreis.
+            </Callout>
+          </section>
+
+          <Separator />
+
           {/* ── SIMULATOR ── */}
           <section className="space-y-6">
-            <SectionHeading id="simulator" icon={PlayCircle} title="Simulator" subtitle="Teste deine Konfiguration live — ohne echte Angebote zu erstellen" />
+            <SectionHeading id="simulator" icon={PlayCircle} title="Simulator" subtitle="Teste deine Konfiguration live, ohne echte Angebote zu erstellen" />
+
+            <Callout type="info">
+              <strong>Schritt 7 von 7.</strong> Der Simulator zeigt das vollständige Ergebnis der Engine: berechnete Felder, aktive Komponenten, Validierungsmeldungen und Freitext-Regeln auf einen Blick.
+            </Callout>
 
             <p className="text-sm text-muted-foreground">
               Der Simulator ist dein Testlabor. Gib beliebige Werte ein und sieh sofort welche Formeln, Regeln und Komponenten aktiv werden.
@@ -815,7 +842,7 @@ dachflaeche > 50 ? dachflaeche * 1.1 : dachflaeche`}</CodeBlock>
             </div>
 
             <Callout type="tip">
-              Validierungs-Fehler und Warnungen werden im Simulator live angezeigt — genau so wie sie später dem Nutzer im Konfigurator erscheinen.
+              Validierungs-Fehler und Warnungen werden im Simulator live angezeigt, genau so wie sie später dem Nutzer im Konfigurator erscheinen.
             </Callout>
           </section>
 
@@ -823,7 +850,7 @@ dachflaeche > 50 ? dachflaeche * 1.1 : dachflaeche`}</CodeBlock>
 
           {/* ── CONFIGURATOR ── */}
           <section className="space-y-6">
-            <SectionHeading id="configurator" icon={ShoppingCart} title="Konfigurator" subtitle="Das Werkzeug für Verkäufer — Angebote in wenigen Klicks berechnen" />
+            <SectionHeading id="configurator" icon={ShoppingCart} title="Konfigurator" subtitle="Das Werkzeug für Verkäufer: Angebote in wenigen Klicks berechnen" />
 
             <p className="text-sm text-muted-foreground">
               Der Konfigurator ist die Nutzeroberfläche für den täglichen Einsatz. Verkäufer wählen eine Domäne, füllen das Formular aus und erhalten sofort eine vollständige Kalkulation.
@@ -842,7 +869,7 @@ dachflaeche > 50 ? dachflaeche * 1.1 : dachflaeche`}</CodeBlock>
                 <span className="text-xs text-muted-foreground">Für alle Rollen verfügbar</span>
               </div>
               <p className="text-xs text-emerald-700">
-                Der Konfigurator ist für alle Nutzer zugänglich — Verkäufer, Domain-Admins und Super-Admins können Angebote erstellen.
+                Der Konfigurator ist für alle Nutzer zugänglich. Verkäufer, Domain-Admins und Super-Admins können Angebote erstellen.
               </p>
             </div>
           </section>
@@ -861,7 +888,7 @@ dachflaeche > 50 ? dachflaeche * 1.1 : dachflaeche`}</CodeBlock>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Alle Funktionen der Angebots-Engine sind über eine versionierte REST-API unter <code className="bg-muted px-1.5 py-0.5 rounded text-xs">/api/v1/</code> erreichbar.
               Externe Systeme wie <strong className="text-foreground">n8n</strong>, eigene Frontends oder andere Werkzeuge können darüber vollständig auf Domänen, Preislisten, Benutzer und die Berechnungs-Engine zugreifen.
-              CORS ist aktiviert — die erlaubten Origins werden per Umgebungsvariable gesteuert.
+              CORS ist aktiviert, die erlaubten Origins werden per Umgebungsvariable gesteuert.
             </p>
 
             {/* Auth */}
@@ -885,10 +912,10 @@ curl https://deine-domain.de/api/v1/domains \\
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
                   <Zap className="h-4 w-4 text-primary" />
                 </div>
-                <p className="text-sm font-semibold">Engine-Endpunkt — der Kern der Integration</p>
+                <p className="text-sm font-semibold">Engine-Endpunkt: der Kern der Integration</p>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Mit <code className="bg-white/60 dark:bg-black/20 px-1.5 py-0.5 rounded font-mono">POST /api/v1/domains/:id/run</code> führst du die vollständige Berechnungslogik einer Domäne aus —
+                Mit <code className="bg-white/60 dark:bg-black/20 px-1.5 py-0.5 rounded font-mono">POST /api/v1/domains/:id/run</code> führst du die vollständige Berechnungslogik einer Domäne aus,
                 inklusive Regelwerk, Formeln, Validierungen und Komponenten-Kalkulation.
                 Das Ergebnis entspricht exakt dem, was der Simulator im Browser anzeigt.
               </p>
@@ -1030,11 +1057,11 @@ curl https://deine-domain.de/api/v1/domains \\
 
           {/* ── DATABASE ── */}
           <section className="space-y-6">
-            <SectionHeading id="database" icon={Database} title="Datenbank & Infrastruktur" subtitle="PostgreSQL via Docker — produktionsreif von Anfang an" />
+            <SectionHeading id="database" icon={Database} title="Datenbank & Infrastruktur" subtitle="PostgreSQL via Docker, produktionsreif von Anfang an" />
 
             <p className="text-sm text-muted-foreground leading-relaxed">
               Die Angebots-Engine verwendet <strong className="text-foreground">PostgreSQL 16</strong> als Datenbank.
-              Für die lokale Entwicklung wird die Datenbank über Docker bereitgestellt — kein manuelles Installieren erforderlich.
+              Für die lokale Entwicklung wird die Datenbank über Docker bereitgestellt, kein manuelles Installieren erforderlich.
             </p>
 
             <div className="rounded-2xl border bg-card p-5 space-y-4">
@@ -1087,7 +1114,7 @@ Datenbank: angebots_engine`}</CodeBlock>
             </div>
 
             <Callout type="info">
-              Domänen-Konfigurationen und Preislisten-Artikel werden als JSON in der Datenbank gespeichert. Die Berechnungs-Engine liest diese Daten zur Laufzeit — Schemaänderungen an der Konfigurationsstruktur erfordern daher keine Datenbankmigrationen.
+              Domänen-Konfigurationen und Preislisten-Artikel werden als JSON in der Datenbank gespeichert. Die Berechnungs-Engine liest diese Daten zur Laufzeit, Schemaänderungen an der Konfigurationsstruktur erfordern daher keine Datenbankmigrationen.
             </Callout>
           </section>
 

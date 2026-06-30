@@ -12,7 +12,7 @@ export function RevokeKeyButton({ keyId }: { keyId: string }) {
     if (!confirm("API-Key wirklich widerrufen?")) return;
     setLoading(true);
     try {
-      await fetch(`/api/api-keys/${keyId}`, { method: "DELETE" });
+      await fetch(`/api/v1/api-keys/${keyId}`, { method: "DELETE" });
       router.refresh();
     } finally {
       setLoading(false);

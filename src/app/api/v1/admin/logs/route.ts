@@ -1,10 +1,11 @@
-import { NextRequest } from "next/server";
-import { requireRole } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
 import { ok, apiError } from "@/lib/api-response";
+import { getRequestAuth, hasRole } from "@/lib/request-auth";
 
-export async function GET(req: NextRequest) {
-  await requireRole("SUPER_ADMIN");
+export async function GET(req: Request) {
+  const ctx = await getRequestAuth(req);
+  if (!ctx) return apiError("Not logged in", 401);
+  if (!hasRole(ctx, "SUPER_ADMIN")) return apiError("Keine Berechtigung", 403);
 
   const { searchParams } = new URL(req.url);
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
@@ -32,8 +33,10 @@ export async function GET(req: NextRequest) {
   return ok({ logs, total, page, limit });
 }
 
-export async function DELETE(req: NextRequest) {
-  await requireRole("SUPER_ADMIN");
+export async function DELETE(req: Request) {
+  const ctx = await getRequestAuth(req);
+  if (!ctx) return apiError("Not logged in", 401);
+  if (!hasRole(ctx, "SUPER_ADMIN")) return apiError("Keine Berechtigung", 403);
 
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");

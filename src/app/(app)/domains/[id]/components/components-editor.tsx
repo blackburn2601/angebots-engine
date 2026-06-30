@@ -160,7 +160,7 @@ function KomponenteCard({ komp, alleKomponenten, alleFelder, alleArtikel, onChan
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Mengenfeld — welches Feld liefert die Stückzahl?</Label>
+                    <Label>Mengenfeld: Welches Feld liefert die Stückzahl?</Label>
                     <Select value={komp.menge_feld} onValueChange={(v) => onChange({ ...komp, menge_feld: v })}>
                       <SelectTrigger>
                         <SelectValue placeholder="Feld wählen…" />
@@ -293,7 +293,7 @@ function KomponenteCard({ komp, alleKomponenten, alleFelder, alleArtikel, onChan
               {tab === "varianten" && (
                 <div className="space-y-3">
                   <p className="text-sm text-muted-foreground">
-                    Welcher Artikel aus der Preisliste wird verwendet — je nach Konfiguration
+                    Welcher Artikel aus der Preisliste wird verwendet, je nach Konfiguration
                   </p>
                   {komp.varianten.map((v, i) => (
                     <div key={i} className="flex items-center gap-2">
@@ -446,7 +446,7 @@ export function ComponentsEditor({ domainId, initialConfig, alleArtikel }: Compo
     setSaving(true);
     setError("");
     try {
-      const res = await fetch(`/api/domains/${domainId}`, {
+      const res = await fetch(`/api/v1/domains/${domainId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ config_json: JSON.stringify(config) }),
@@ -482,7 +482,7 @@ export function ComponentsEditor({ domainId, initialConfig, alleArtikel }: Compo
         <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed py-16 text-center">
           <Package className="h-8 w-8 text-muted-foreground mb-3" />
           <p className="text-sm text-muted-foreground mb-4">
-            Noch keine Komponenten — lege deine erste Produktkomponente an
+            Noch keine Komponenten. Lege deine erste Produktkomponente an.
           </p>
           <Button onClick={addKomponente}>
             <Plus className="h-4 w-4" />

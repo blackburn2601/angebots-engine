@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 
 interface ProfileFormProps {
   userId: string;
@@ -26,7 +25,7 @@ export function ProfileForm({ userId, userName, userEmail }: ProfileFormProps) {
     setSaving(true);
     setMsg("");
     try {
-      await fetch(`/api/users/${userId}`, {
+      await fetch(`/api/v1/users/${userId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
@@ -43,7 +42,7 @@ export function ProfileForm({ userId, userName, userEmail }: ProfileFormProps) {
     setSavingPw(true);
     setMsgPw("");
     try {
-      const res = await fetch(`/api/users/${userId}`, {
+      const res = await fetch(`/api/v1/users/${userId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password: pw.new }),

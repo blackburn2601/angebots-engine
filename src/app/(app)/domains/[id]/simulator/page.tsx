@@ -24,7 +24,7 @@ export default async function SimulatorPage({ params }: { params: Promise<{ id: 
       <div className="mb-6">
         <h2 className="text-xl font-semibold">Live-Simulator</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Teste die Konfiguration mit eigenen Werten — vollständig im Browser
+          Teste die Konfiguration mit eigenen Werten, vollständig im Browser
         </p>
       </div>
       <SimulatorClient config={config} pricelists={allePricelists} />

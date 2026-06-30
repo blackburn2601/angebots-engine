@@ -93,7 +93,7 @@ export function PricelistEditor({ pricelist: initial, allDomains }: PricelistEdi
     setSaving(true);
     setError("");
     try {
-      const res = await fetch(`/api/pricelists/${initial.id}`, {
+      const res = await fetch(`/api/v1/pricelists/${initial.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, aktiv, items_json: JSON.stringify(items), domainIds }),
@@ -158,7 +158,7 @@ export function PricelistEditor({ pricelist: initial, allDomains }: PricelistEdi
 
           {items.length === 0 ? (
             <div className="rounded-xl border-2 border-dashed p-8 text-center text-sm text-muted-foreground">
-              Noch keine Artikel — importiere eine CSV oder füge Artikel manuell hinzu
+              Noch keine Artikel. Importiere eine CSV oder füge Artikel manuell hinzu.
             </div>
           ) : (
             <div className="rounded-xl border bg-card shadow-sm overflow-auto">

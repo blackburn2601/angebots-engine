@@ -153,3 +153,17 @@ model AppSetting {
   updated_at DateTime @updatedAt
   updated_by String?
 }
+
+model EngineLog {
+  id          String   @id @default(cuid())
+  domain_id   String
+  domain_name String
+  inputs      String
+  outputs     String
+  trace       String
+  duration_ms Int?
+  created_at  DateTime @default(now())
+
+  @@index([domain_id, created_at])
+  @@index([created_at])
+}
