@@ -2,9 +2,9 @@ import { describe, it, expect, beforeEach, afterAll } from "vitest";
 import { DomainService } from "@/services/DomainService";
 import { db, truncateDomains } from "../helpers/db";
 
-// Requires DATABASE_URL pointing to a test/dev PostgreSQL instance.
-// In CI this is provided by the postgres service container.
-// Locally: docker compose up -d, then npm test
+// These tests TRUNCATE tables — they only ever run against the disposable
+// "*_test" database (enforced by assert-test-db.ts). `npm test` starts it
+// automatically; see docker-compose.test.yml. NEVER point this at the dev DB.
 
 beforeEach(async () => {
   await truncateDomains();

@@ -57,9 +57,9 @@ export class DomainService {
     return prisma.domain.delete({ where: { id } });
   }
 
-  static async duplicate(id: string) {
+  static async duplicate(id: string, name?: string) {
     const source = await prisma.domain.findUniqueOrThrow({ where: { id } });
-    const newName = `${source.name} (Kopie)`;
+    const newName = name?.trim() || `${source.name} (Kopie)`;
     const baseSlug = slugify(newName);
     let slug = baseSlug;
     let counter = 1;

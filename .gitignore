@@ -24,6 +24,9 @@
 .DS_Store
 *.pem
 
+# IDE
+.idea/
+
 # debug
 npm-debug.log*
 yarn-debug.log*
@@ -33,6 +36,8 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
+# Non-secret test DB config — shared so `npm test` works out of the box.
+!.env.test
 
 # vercel
 .vercel

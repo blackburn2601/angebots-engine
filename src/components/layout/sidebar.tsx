@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, LayoutGrid, Settings2, ListChecks, ShoppingCart,
   Users, Key, LogOut, ChevronRight, ChevronLeft, Zap, BookOpen,
-  Menu, X, Activity, Webhook, Code2,
+  Menu, X, Activity, Webhook,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from "next-auth/react";
@@ -29,7 +29,6 @@ const navItems: NavItem[] = [
   { href: "/admin/api-keys", label: "API-Keys", icon: Key, roles: ["SUPER_ADMIN"] },
   { href: "/admin/logs", label: "API-Logs", icon: Activity, roles: ["SUPER_ADMIN"] },
   { href: "/admin/webhooks", label: "Webhooks", icon: Webhook, roles: ["SUPER_ADMIN", "DOMAIN_ADMIN"] },
-  { href: "/admin/config", label: "Config", icon: Code2, roles: ["SUPER_ADMIN"] },
   { href: "/docs", label: "Dokumentation", icon: BookOpen },
 ];
 
