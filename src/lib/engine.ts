@@ -314,7 +314,7 @@ export function runEngine(
 
     trace.components.push({
       id: komp.id,
-      label: komp.label,
+      label: komp.name,
       active,
       activation_checks: checks,
       selected_variant: active ? selectedVariant : null,
