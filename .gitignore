@@ -47,3 +47,6 @@ yarn-error.log*
 next-env.d.ts
 prisma/dev.db
 prisma/*.db
+
+# generated at build time from docs/developer/*.md (postinstall / predev / prebuild)
+/src/generated/

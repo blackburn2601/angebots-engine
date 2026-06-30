@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, LayoutGrid, Settings2, ListChecks, ShoppingCart,
   Users, Key, LogOut, ChevronRight, ChevronLeft, Zap, BookOpen,
-  Menu, X, Activity, Webhook,
+  Menu, X, Activity, Webhook, Code2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from "next-auth/react";
@@ -30,6 +30,7 @@ const navItems: NavItem[] = [
   { href: "/admin/logs", label: "API-Logs", icon: Activity, roles: ["SUPER_ADMIN"] },
   { href: "/admin/webhooks", label: "Webhooks", icon: Webhook, roles: ["SUPER_ADMIN", "DOMAIN_ADMIN"] },
   { href: "/docs", label: "Dokumentation", icon: BookOpen },
+  { href: "/docs/developer", label: "Entwickler-Docs", icon: Code2, roles: ["SUPER_ADMIN"] },
 ];
 
 interface SidebarProps {
@@ -51,12 +52,21 @@ function SidebarContent({
     (item) => !item.roles || item.roles.includes(userRolle)
   );
 
+  // Highlight only the most specific match so nested routes (e.g. /docs vs
+  // /docs/developer) don't light up their parent entry too.
+  const activeHref = visibleItems
+    .filter((item) => pathname === item.href || pathname.startsWith(item.href + "/"))
+    .reduce<string | null>(
+      (best, item) => (best && best.length >= item.href.length ? best : item.href),
+      null
+    );
+
   return (
     <>
       <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-4">
         <ul className="space-y-0.5">
           {visibleItems.map((item) => {
-            const active = pathname.startsWith(item.href);
+            const active = activeHref === item.href;
             return (
               <li key={item.href}>
                 <Link
