@@ -2,6 +2,12 @@ services:
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
+    # Publish Postgres on the host so host tools (Prisma, npm run db:migrate,
+    # tests) can reach it at localhost:${POSTGRES_PORT}. Defaults to 5544 to
+    # avoid clashing with other local Postgres instances on 5432 and the test
+    # DB on 5433. Override POSTGRES_PORT in .env if needed.
+    ports:
+      - "${POSTGRES_PORT:-5544}:5432"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-angebots}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
