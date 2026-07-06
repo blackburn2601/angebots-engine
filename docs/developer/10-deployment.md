@@ -239,6 +239,7 @@ Running multiple app containers in parallel works for the Next.js server itself,
 | `NEXTAUTH_URL` | Yes | Public HTTPS URL of the app |
 | `ALLOWED_ORIGIN` | Recommended | Restrict CORS to your frontend domain |
 | `APP_PORT` | No | Defaults to 3000 |
+| `POSTGRES_PORT` | No | Host port Postgres is published on; defaults to `5544` |
 
 ---
 
@@ -270,4 +271,4 @@ Set up automated daily backups with a cron job on the host.
 - [ ] Login works at `https://your-domain.com/login`
 - [ ] At least one Domain created and Engine test with `/api/v1/domains/{id}/run` succeeds
 - [ ] Automated DB backup scheduled
-- [ ] Server firewall blocks direct port 5432 access (only Docker internal)
+- [ ] Server firewall blocks the published Postgres port (`POSTGRES_PORT`, default 5544) from outside access — or unpublish it in production if external DB access isn't needed

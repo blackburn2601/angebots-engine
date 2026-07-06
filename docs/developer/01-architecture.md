@@ -66,13 +66,14 @@ which issues and clears the session cookie.)
 
 Every `/api/v1` request accepts **either** authentication method:
 
+- **Bearer token** (`Authorization: Bearer eak_live_…`) — an API key (bcrypt-hashed in DB),
+  used by third-party systems (ERP, CRM, external frontends).
 - **Session cookie** (NextAuth JWT) — sent automatically by the browser, so the frontend's
   client-side `fetch` calls are authenticated with no extra headers. (Server Components don't
   call the API at all — they read from the database directly via the service layer.)
-- **Bearer token** (`Authorization: Bearer eak_live_…`) — an API key (bcrypt-hashed in DB),
-  used by third-party systems (ERP, CRM, external frontends).
 
-Each request is checked for a valid session first, then falls back to the Bearer key.
+`getRequestAuth` checks for an `Authorization: Bearer` header first; if present it is validated
+as an API key, otherwise the request falls back to the NextAuth session cookie.
 Additional `/api/v1` behaviour:
 
 - CORS configured via the `ALLOWED_ORIGIN` environment variable
@@ -128,12 +129,12 @@ Browser (SimulatorClient) → user changes an input
 
 OR via API:
 Browser/ERP → POST /api/v1/domains/[id]/run  { inputs: {...} }
-  → authenticate Bearer token
+  → getRequestAuth (Bearer API key OR session cookie)
   → EngineService.run(domainId, inputs)
     → load domain from DB
     → JSON.parse(config_json)
     → runEngine(config, inputs)
-  → return SimulatorResult as JSON
+  → return EngineResult (SimulatorResult + trace) as JSON
 ```
 
 ---

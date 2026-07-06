@@ -18,7 +18,7 @@ The **Angebots-Engine** is a web-based platform for building and running configu
 | [04 · Database & Prisma](./04-database.md) | Schema, models, migrations, seeding |
 | [05 · Authentication & Authorization](./05-authentication.md) | NextAuth, JWT, roles, rate limiting |
 | [06 · The Engine](./06-engine.md) | Core business logic — rules, formulas, components |
-| [07 · API Reference](./07-api.md) | All HTTP endpoints, internal and external |
+| [07 · API Reference](./07-api.md) | All HTTP `/api/v1` endpoints (single API surface) |
 | [08 · Frontend Architecture](./08-frontend.md) | Next.js App Router, server vs client components |
 | [09 · Services Layer](./09-services.md) | Service classes, data access patterns |
 | [10 · Deployment](./10-deployment.md) | Docker, docker-compose, production go-live checklist |

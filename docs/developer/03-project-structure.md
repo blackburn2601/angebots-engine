@@ -165,7 +165,7 @@ src/lib/
 
 ## `src/services/`
 
-One service class per data entity. Services encapsulate all Prisma calls so that routes and pages never call Prisma directly (except for the admin/config page).
+One service class per data entity. Services encapsulate all Prisma calls so that routes and pages never call Prisma directly.
 
 ```
 src/services/

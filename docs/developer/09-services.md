@@ -6,8 +6,6 @@ The service layer sits between the API routes / pages and the Prisma database cl
 
 **Rule:** Pages and API routes should call services, not Prisma directly. This keeps database logic in one place and makes it easy to change queries without touching multiple route files.
 
-Exception: The admin config page reads `AppSetting` directly because it's a one-off admin view.
-
 ---
 
 ## `DomainService`
@@ -25,7 +23,7 @@ Exception: The admin config page reads `AppSetting` directly because it's a one-
 | `create(name)` | Creates domain, auto-generates unique slug |
 | `update(id, data)` | Updates `name` and/or `config_json` |
 | `delete(id)` | Hard delete (cascades to `DomainPricelist`) |
-| `duplicate(id)` | Creates copy with `(Kopie)` suffix, unique slug |
+| `duplicate(id, name?)` | Creates a copy; uses the provided `name` or falls back to a `(Kopie)` suffix; unique slug |
 | `parseConfig(json)` | `JSON.parse` with safe fallback to empty config |
 
 ### Slug generation
@@ -61,12 +59,12 @@ Manages pricelists and their many-to-many link to domains.
 |---|---|
 | `findAll()` | All pricelists with linked domain count |
 | `findById(id)` | Single pricelist |
-| `findActiveForDomain(domainId)` | Active pricelists linked to a domain |
-| `create(data)` | Creates pricelist, parses `items_json` |
+| `findByIdWithDomains(id)` | Pricelist + its linked domains |
+| `findAllForDomains()` | All pricelists with their domain links |
+| `create(name)` | Creates a pricelist |
 | `update(id, data)` | Updates fields + re-serializes `items_json` |
 | `delete(id)` | Deletes pricelist (cascades to `DomainPricelist`) |
-| `linkDomain(pricelistId, domainId)` | Creates join row |
-| `unlinkDomain(pricelistId, domainId)` | Deletes join row |
+| `parseItems(itemsJson)` | `JSON.parse` of `items_json` → `PreisItem[]` |
 
 ---
 

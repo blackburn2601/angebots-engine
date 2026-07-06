@@ -15,6 +15,7 @@ export default defineConfig({
     environment: "node",
     globals: true,
     include: ["src/__tests__/**/*.test.ts"],
+    setupFiles: ["./src/__tests__/setup.ts"],
     coverage: {
       provider: "v8",
       include: ["src/lib/engine.ts", "src/services/**/*.ts"],
@@ -24,7 +25,10 @@ export default defineConfig({
 });
 ```
 
-The `@/` path alias is replicated here so tests can import from `@/lib/engine` etc.
+The `@/` path alias is replicated here so tests can import from `@/lib/engine` etc. The
+`setupFiles` entry runs `src/__tests__/setup.ts` once per worker **before any test module** —
+it loads the test `DATABASE_URL` from `.env.test` (unless one is already set) and runs the
+test-DB guard, so tests can never accidentally open the dev database.
 
 ---
 
@@ -64,9 +68,8 @@ it("evaluates basic arithmetic", () => {
 
 ### Integration tests: `src/__tests__/services/domain.service.test.ts`
 
-Tests for `DomainService` — these hit a real PostgreSQL database.
-
-They require `DATABASE_URL` to point to a running test database.
+Tests for `DomainService` — these hit a real PostgreSQL database (the disposable test DB,
+see below).
 
 Setup/teardown:
 ```typescript
@@ -78,27 +81,41 @@ afterAll(async () => {
 });
 ```
 
-`truncateDomains()` is in `src/__tests__/helpers/db.ts` — it runs `DELETE FROM "Domain"`.
+Helpers live in `src/__tests__/helpers/db.ts`:
+- `truncateDomains()` — deletes `DomainPricelist` then `Domain` (via Prisma `deleteMany`).
+- `truncateAll()` — wipes every table, for tests that touch more than domains.
+
+Both re-invoke the `assertTestDatabase` guard before deleting anything.
 
 ---
 
 ## Running integration tests locally
 
-Start the local Postgres DB (from docker-compose):
+You don't need to set anything up by hand — `npm test` runs a `pretest` hook
+(`scripts/ensure-test-db.mjs`) that starts the disposable test database and applies migrations
+to it automatically:
 
 ```bash
-docker compose up -d postgres
+npm test          # pretest auto-starts the test DB, then runs the suite
 ```
 
-Ensure `DATABASE_URL` in `.env` points to it:
+The test database is defined in `docker-compose.test.yml` — a throwaway Postgres on host port
+**5433** whose data lives in `tmpfs` (RAM, wiped on stop), with the DB name `angebots_engine_test`.
+Its connection string lives in the committed **`.env.test`**:
+
 ```env
-DATABASE_URL="postgresql://angebots:secret@localhost:5432/angebots_engine"
+DATABASE_URL="postgresql://angebots:secret@localhost:5433/angebots_engine_test"
 ```
 
-Then run tests normally:
+To control the container manually:
 ```bash
-npm test
+npm run test:db:up     # docker compose -f docker-compose.test.yml up -d --wait
+npm run test:db:down   # stop and remove it
 ```
+
+**Safety guard:** `src/__tests__/helpers/assert-test-db.ts` aborts the run if `DATABASE_URL`'s
+database name does not end in `_test` — the integration tests truncate tables, so they must
+only ever target a disposable test DB. Never point tests at the dev or prod database.
 
 ---
 
@@ -110,13 +127,16 @@ Runs on every push to `main` and `feature/**` branches, and on all pull requests
 
 Steps:
 1. **Checkout** source
-2. **Setup Node.js 20** with npm cache
+2. **Setup Node.js 26** with npm cache
 3. **`npm ci`** — install dependencies
 4. **`npx prisma migrate deploy`** — create test DB schema
 5. **`npm test`** — run all tests
 6. **`npm run build`** — verify production build works
 
-The CI environment spins up a Postgres 16 service container and sets `DATABASE_URL` automatically.
+The CI environment spins up a Postgres 16 service container (DB `angebots_engine_test`) and sets
+`DATABASE_URL` automatically. The `pretest` hook detects CI (`$CI`) and skips the local
+docker-compose test DB, since CI provisions its own `_test` service and runs migrations as a
+separate step.
 
 ```yaml
 services:
@@ -132,27 +152,19 @@ services:
 
 ## Test database vs dev database
 
-The tests use a **separate** database from development:
+Tests run against a **completely separate, disposable** database — never the dev DB:
 
-| Environment | Database |
-|---|---|
-| Local dev | `angebots_engine` |
-| CI tests | `angebots_engine_test` |
-| Production | `angebots_engine` (or customer-named) |
+| Environment | Database | Host port | Source |
+|---|---|---|---|
+| Local dev | `angebots_engine` | 5544 | `docker-compose.yml` |
+| Local tests | `angebots_engine_test` | 5433 (tmpfs) | `docker-compose.test.yml` + `.env.test` |
+| CI tests | `angebots_engine_test` | 5432 (service) | `.github/workflows/ci.yml` |
+| Production | `angebots_engine` (or customer-named) | — | deployment env |
 
-You can also create a separate local test DB:
-
-```bash
-# In docker-compose, the default DB is angebots_engine
-# For tests, you can use it directly (the beforeEach truncates data)
-# Or create a separate DB:
-docker compose exec postgres psql -U angebots -c "CREATE DATABASE angebots_engine_test;"
-```
-
-Then set `DATABASE_URL` to the test DB when running tests:
-```bash
-DATABASE_URL="postgresql://angebots:secret@localhost:5432/angebots_engine_test" npm test
-```
+You normally don't manage the test DB by hand — the `pretest` hook does it. The old manual
+`CREATE DATABASE` step is no longer needed: the test DB is a dedicated container, its URL is in
+`.env.test`, and the `assertTestDatabase` guard enforces that any test run targets a `*_test`
+database.
 
 ---
 
