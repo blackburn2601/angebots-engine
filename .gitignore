@@ -19,6 +19,8 @@
 
 # production
 /build
+# compiled seed script (npm run build:seed — used by the Docker image)
+/dist
 
 # misc
 .DS_Store

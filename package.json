@@ -9,6 +9,7 @@
     "build": "next build",
     "start": "next start",
     "gen:dev-docs": "node scripts/gen-developer-docs.mjs",
+    "build:seed": "tsc prisma/seed.ts --outDir dist/seed --module commonjs --moduleResolution node --target ES2020 --esModuleInterop --skipLibCheck",
     "lint": "eslint",
     "db:migrate": "prisma migrate dev",
     "db:seed": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed.ts",

@@ -8,14 +8,18 @@ A configurable quoting and calculation engine built with Next.js. Define fields,
 
 - **Domains** — self-contained configuration areas (e.g. photovoltaics, windows, roofing)
 - **Fields** — numbers, text, dropdowns, booleans, formula fields, and output fields
-- **Rules engine** — condition-based value assignment with AND/OR logic
+- **Rules engine** — condition-based value assignment with AND/OR logic, plus a full execution **trace** for every run
 - **Validations** — field-level error and warning rules, including field-to-field comparisons
 - **Components** — link calculation results to price list articles for automatic costing
 - **Price lists** — manage articles with purchase prices; CSV import supported
 - **Simulator** — test any configuration live without creating a real quote
+- **Domain health check** — per-domain dashboard that flags incomplete configuration
 - **Configurator** — sales-facing UI for creating quotes in a few clicks
-- **REST API v1** — full headless API with CRUD and engine execution for external integration
+- **REST API v1** — single headless API surface with CRUD and engine execution, used by both the UI and external integrations
+- **API request log** — every `/api/v1` request is persisted and browsable in the admin panel
+- **Webhooks** — configurable outbound webhook URLs
 - **Role-based access** — Super Admin, Domain Admin, Seller
+- **Documentation** — end-user guide at `/docs`, full developer documentation at `/docs/developer`
 
 ---
 
@@ -23,19 +27,22 @@ A configurable quoting and calculation engine built with Next.js. Define fields,
 
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 16 (App Router, Turbopack) |
+| Framework | Next.js 16 (App Router, React 18) |
+| Language | TypeScript 5 |
 | Auth | NextAuth v5 (beta) — credentials + JWT |
-| Database | PostgreSQL 16 via Docker + Prisma ORM |
-| Styling | Tailwind CSS v4 + shadcn/ui (Radix UI) |
-| Language | TypeScript |
+| Database | PostgreSQL 16 via Docker + Prisma 6 ORM |
+| Styling | Tailwind CSS v4 + shadcn-style components (Radix UI) |
+| Forms / validation | react-hook-form + zod v4 |
+| Charts | Recharts |
+| Tests | Vitest 4 (node environment) |
 
 ---
 
 ## Requirements
 
-- Node.js 20+
+- Node.js 20+ (CI builds on Node 26)
 - npm 9+
-- Docker (for PostgreSQL)
+- Docker (for PostgreSQL — both the dev and the test database)
 
 ---
 
@@ -54,25 +61,22 @@ cd angebots-engine
 npm install
 ```
 
-### 3. Start the database
+`postinstall` runs `prisma generate` and `scripts/gen-developer-docs.mjs` (which bundles
+`docs/developer/*.md` into `src/generated/developer-docs.ts` for the in-app viewer).
 
-```bash
-docker compose up -d
-```
-
-This starts a PostgreSQL 16 container on port 5432 with persistent storage.
-
-### 4. Configure environment variables
+### 3. Configure environment variables
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` and set:
+The defaults work for local development as-is. `docker compose` **requires** `POSTGRES_PASSWORD`,
+`NEXTAUTH_SECRET`, and `NEXTAUTH_URL` to be set — so create `.env` before starting the containers.
 
 | Variable | Description |
 |---|---|
-| `DATABASE_URL` | PostgreSQL connection — `postgresql://angebots:secret@localhost:5432/angebots_engine` for local Docker |
+| `DATABASE_URL` | PostgreSQL connection — `postgresql://angebots:secret@localhost:5544/angebots_engine` for local Docker |
+| `POSTGRES_PORT` | Host port Postgres is published on (default `5544`) — must match the port in `DATABASE_URL` |
 | `NEXTAUTH_SECRET` | Random string, min 32 characters |
 | `NEXTAUTH_URL` | Base URL of the app, e.g. `http://localhost:3000` |
 | `SEED_ADMIN_EMAIL` | Email for the initial Super Admin account |
@@ -80,14 +84,24 @@ Edit `.env` and set:
 | `SEED_ADMIN_NAME` | Display name for the initial Super Admin account |
 | `ALLOWED_ORIGIN` | Allowed CORS origin for `/api/v1/` (default: `*`) |
 
+> **Ports:** the dev database is published on **5544**, not the default 5432, to avoid clashing
+> with other local Postgres instances and with the disposable test DB (which uses **5433**).
+
+### 4. Start the database
+
+```bash
+docker compose up -d postgres
+```
+
+This starts only the PostgreSQL 16 container with persistent storage. (`docker compose up -d`
+without a service name would also build and start the production app container — not what you
+want for local development.)
+
 ### 5. Apply the schema and seed
 
 ```bash
-# Run migrations
-npx prisma migrate deploy
-
-# Seed the initial admin user
-npm run db:seed
+npm run db:migrate   # prisma migrate dev
+npm run db:seed      # creates the Super Admin from SEED_ADMIN_* in .env
 ```
 
 ### 6. Start the development server
@@ -98,19 +112,57 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) and log in with the credentials from your `.env`.
 
+> The dev server runs with `--webpack` on purpose. The bundled Turbopack version has a panic bug
+> that causes infinite page reloads — see `docs/developer/12-debugging.md`.
+
 ---
 
 ## Available Scripts
 
 | Script | Description |
 |---|---|
-| `npm run dev` | Start development server with Turbopack |
+| `npm run dev` | Start development server (Webpack) |
 | `npm run build` | Build for production |
 | `npm run start` | Start production server |
 | `npm run lint` | Run ESLint |
+| `npm test` | Run the Vitest suite once (auto-starts the test DB) |
+| `npm run test:watch` | Vitest in watch mode |
+| `npm run test:coverage` | Coverage report (v8) |
+| `npm run test:db:up` | Start the disposable test database |
+| `npm run test:db:down` | Stop and remove the test database |
 | `npm run db:push` | Push Prisma schema without migrations (prototype) |
 | `npm run db:migrate` | Create and apply a new migration |
 | `npm run db:seed` | Seed the initial admin user |
+| `npm run gen:dev-docs` | Regenerate the bundled developer docs module |
+| `npm run build:seed` | Compile `prisma/seed.ts` to `dist/seed/seed.js` (used by the Docker image) |
+
+`predev`, `prebuild`, and `postinstall` regenerate the developer docs automatically;
+`pretest` hooks start the test database.
+
+---
+
+## Testing
+
+Vitest runs in the `node` environment; tests live in `src/__tests__/`.
+
+| Test | Scope |
+|---|---|
+| `engine.test.ts` | Unit tests for `src/lib/engine.ts` — formulas, conditions, output rules, validations, freitext, components. No database needed. |
+| `services/domain.service.test.ts` | Integration tests for `DomainService` against a real PostgreSQL database. |
+
+```bash
+npm test
+```
+
+The `pretest` hook (`scripts/ensure-test-db.mjs`) starts the disposable test database from
+`docker-compose.test.yml` and applies migrations to it. That database runs on port **5433**,
+stores its data in tmpfs (wiped on every stop), and its name must end in `_test` — a guard
+(`src/__tests__/helpers/assert-test-db.ts`) aborts the suite otherwise, so tests can never
+touch the dev database.
+
+Coverage is configured for `src/lib/engine.ts` and `src/services/**/*.ts`.
+CI (`.github/workflows/ci.yml`) runs tests and a production build on every push to `main` and
+`feature/**`, and on pull requests to `main`.
 
 ---
 
@@ -118,21 +170,40 @@ Open [http://localhost:3000](http://localhost:3000) and log in with the credenti
 
 | Role | Access |
 |---|---|
-| **Super Admin** | Full access — users, API keys, domains, price lists, configurator, admin panel |
+| **Super Admin** | Full access — users, API keys, domains, price lists, configurator, admin panel, developer docs |
 | **Domain Admin** | Domains, price lists, configurator |
 | **Seller** | Configurator only |
+
+Login is rate-limited to 5 failed attempts per IP per 15 minutes (tracked in the `LoginAttempt` table).
 
 ---
 
 ## REST API v1
 
-The `/api/v1/` routes provide a versioned, headless API with CORS support. All requests require a valid session cookie **or** an `Authorization` header with a Bearer API key.
+All resource routes live under `/api/v1/` — a **single API surface** used by both the UI
+(session cookie) and external clients (Bearer API key). The only non-versioned route is the
+NextAuth handler at `/api/auth/**`.
 
 ```
 Authorization: Bearer eak_live_<key>
 ```
 
-API keys are created in the admin panel (Super Admin only).
+API keys are created in the admin panel (Super Admin only) and carry full admin-level access.
+If no `Authorization` header is present, the request falls back to the NextAuth session cookie.
+
+**Response format**
+
+```json
+{ "data": ... }                                  // 200 / 201
+{ "error": "message", "code": "OPTIONAL_CODE" }  // 4xx / 5xx
+```
+
+**Rate limiting & logging:** requests are limited to 60 per minute per IP (in-memory,
+per instance) and answered with `429` plus `Retry-After` beyond that. Every request is written
+to the `ApiLog` table (`Authorization` header masked, cookies stripped) and is browsable under
+`/admin/logs`.
+
+**CORS:** `/api/v1/**` sends `Access-Control-Allow-Origin: $ALLOWED_ORIGIN` (default `*`).
 
 ### Domains
 
@@ -159,7 +230,9 @@ API keys are created in the admin panel (Super Admin only).
 }
 ```
 
-Returns the full `SimulatorResult` — resolved output fields, activated components, and validation messages.
+Returns the full `EngineResult` — resolved `values`, `firedRules`, `activeFreitext`,
+`activeKomponenten`, `validierungen`, plus a `trace` object documenting every formula,
+rule group, validation, and component decision the engine made.
 
 ### Price Lists
 
@@ -204,11 +277,15 @@ Returns the full `SimulatorResult` — resolved output fields, activated compone
 | `PATCH` | `/api/v1/admin/webhooks/:id` | Update webhook (Super Admin) |
 | `DELETE` | `/api/v1/admin/webhooks/:id` | Delete webhook (Super Admin) |
 
+Full request/response examples: `docs/developer/07-api.md` (also in-app at `/docs/developer`).
+
 ---
 
 ## Production Deployment (Docker)
 
-Each customer instance runs as its own isolated `docker compose` stack — one Next.js container and one PostgreSQL container, exposed on a configurable port and routed by a reverse proxy (nginx, Caddy, Traefik, etc.).
+Each customer instance runs as its own isolated `docker compose` stack — one Next.js container
+and one PostgreSQL container, exposed on a configurable port and routed by a reverse proxy
+(nginx, Caddy, Traefik, etc.).
 
 ### Per-customer setup
 
@@ -225,8 +302,11 @@ cp .env.example .env
 docker compose up -d --build
 
 # 4. First-time only: seed the admin user
-docker compose exec app node node_modules/prisma/build/index.js db seed
+docker compose exec app node prisma/seed.js
 ```
+
+The image ships a compiled `prisma/seed.js` (built from `prisma/seed.ts` via `npm run build:seed`)
+because the runtime image contains no `ts-node` — do **not** use `prisma db seed` inside the container.
 
 Migrations run automatically on every container start (`prisma migrate deploy` in the entrypoint).
 
@@ -238,9 +318,12 @@ Migrations run automatically on every container start (`prisma migrate deploy` i
 | `POSTGRES_USER` | PostgreSQL user (default: `angebots`) |
 | `POSTGRES_PASSWORD` | PostgreSQL password — **required**, no default |
 | `POSTGRES_DB` | Database name (default: `angebots_engine`) |
+| `POSTGRES_PORT` | Host port Postgres is published on (default: `5544`) |
 | `NEXTAUTH_SECRET` | Random string ≥ 32 chars — generate with `openssl rand -base64 32` |
 | `NEXTAUTH_URL` | Public URL of the instance, e.g. `https://customer.example.com` |
 | `ALLOWED_ORIGIN` | CORS origin for `/api/v1/` (default: `*`, restrict in production) |
+
+Full deployment guide including reverse-proxy config and backups: `docs/developer/10-deployment.md`.
 
 ---
 
@@ -250,29 +333,38 @@ Migrations run automatically on every container start (`prisma migrate deploy` i
 src/
 ├── app/
 │   ├── (app)/               # Authenticated app routes (Server Components)
-│   │   ├── admin/           # User, API key, webhook, config management
+│   │   ├── admin/           # Users, API keys, webhooks, API log
 │   │   ├── configurator/    # Sales configurator
-│   │   ├── docs/            # In-app documentation
-│   │   ├── domains/         # Domain configuration editor
+│   │   ├── dashboard/       # Global stats overview
+│   │   ├── docs/            # In-app docs — /docs (all roles), /docs/developer (Super Admin)
+│   │   ├── domains/         # Domain configuration editor + health dashboard
 │   │   ├── pricelists/      # Price list management
 │   │   └── settings/        # User profile
 │   ├── api/
-│   │   ├── v1/              # Headless REST API (versioned, CORS-enabled)
-│   │   │   ├── domains/
-│   │   │   ├── pricelists/
-│   │   │   ├── users/
-│   │   │   ├── api-keys/
-│   │   │   ├── dashboard/
-│   │   │   └── admin/
-│   │   └── ...              # Legacy internal API routes (for Client Components)
+│   │   ├── auth/            # NextAuth handler (the only non-versioned route)
+│   │   └── v1/              # The API surface (versioned, CORS-enabled, logged)
+│   │       ├── admin/       # logs, webhooks
+│   │       ├── api-keys/
+│   │       ├── dashboard/
+│   │       ├── domains/     # incl. :id/run (engine) and :id/duplicate
+│   │       ├── pricelists/
+│   │       └── users/
 │   └── login/               # Auth pages
 ├── components/
-│   ├── layout/              # Sidebar, navigation
-│   └── ui/                  # shadcn/ui components
+│   ├── layout/              # Sidebar, navigation progress
+│   └── ui/                  # shadcn-style UI components
+├── generated/
+│   └── developer-docs.ts    # Build artifact — docs/developer/*.md bundled for /docs/developer
 ├── lib/
-│   ├── engine.ts            # Core rules engine (pure function — not modified)
-│   ├── api-response.ts      # Typed API response helpers
+│   ├── engine.ts            # Core rules engine (pure function — no framework imports)
+│   ├── api-response.ts      # Typed API response helpers (ok / created / apiError)
+│   ├── api-logger.ts        # withLogging wrapper — ApiLog persistence + rate limit
+│   ├── api-rate-limit.ts    # In-memory 60 req/min per IP
+│   ├── api-key-auth.ts      # Bearer key verification (bcrypt)
+│   ├── request-auth.ts      # Session-or-API-key resolution for /api/v1 routes
 │   ├── auth.ts              # NextAuth configuration
+│   ├── auth-helpers.ts      # requireAuth / requireRole for server components
+│   ├── rate-limit.ts        # Login brute-force protection
 │   ├── prisma.ts            # Prisma client singleton
 │   └── validate-fields.ts   # Formula order validation
 ├── services/                # Service layer — all database access
@@ -284,26 +376,34 @@ src/
 │   ├── DashboardService.ts
 │   └── WebhookService.ts
 ├── types/
-│   └── domain.ts            # Core domain type definitions (not modified)
+│   └── domain.ts            # Core domain type definitions (engine contract)
+└── __tests__/               # Vitest suites + DB helpers and test-DB guard
 prisma/
 ├── schema.prisma            # PostgreSQL schema
 ├── migrations/              # Migration history
 └── seed.ts                  # Database seeder
+scripts/
+├── gen-developer-docs.mjs   # Bundles docs/developer/*.md into src/generated
+└── ensure-test-db.mjs       # Starts + migrates the disposable test DB before `npm test`
+docs/
+├── developer/               # Developer documentation (01 … 12)
+├── architecture-review.md   # Architecture review notes
+└── OBSOLET/                 # Superseded planning documents
 Dockerfile                   # Multi-stage production build (standalone output)
 docker-compose.yml           # App + PostgreSQL 16 (one stack per customer)
+docker-compose.test.yml      # Disposable test database (port 5433, tmpfs)
 docker-entrypoint.sh         # Runs migrate deploy, then starts the server
-docs/
-└── architecture.md          # System architecture overview
 ```
 
----
-
-## Architecture Overview
-
-See [docs/architecture.md](docs/architecture.md) for a detailed description of the service layer, headless API design, and the rules engine.
+**Key invariant:** neither pages nor API routes import Prisma directly — all database access
+goes through a service class. The engine (`src/lib/engine.ts`) is a pure function whose only
+dependency is `src/types/domain.ts`.
 
 ---
 
-## In-App Documentation
+## Documentation
 
-A full feature guide is available inside the app at `/docs` — accessible to all roles.
+- **`docs/developer/`** — the full technical reference (architecture, getting started, project
+  structure, database, auth, engine, API, frontend, services, deployment, testing, debugging).
+  Rendered in-app at `/docs/developer` for Super Admins.
+- **`/docs`** — end-user feature guide inside the app, available to all roles.
