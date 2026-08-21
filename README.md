@@ -1,12 +1,55 @@
+<div align="center">
+
 # Angebots-Engine
 
-A configurable quoting and calculation engine built with Next.js. Define fields, formulas, rules, and components once — let the configurator handle the rest.
+**Konfigurierbare Angebots- und Kalkulationsengine** — define fields, formulas, rules, and
+priced components once per domain; a visual rules engine and a headless REST API do the rest.
+
+[![CI](https://github.com/blackburn2601/angebots-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/blackburn2601/angebots-engine/actions/workflows/ci.yml)
+![Next.js](https://img.shields.io/badge/Next.js-16-000000)
+![Prisma](https://img.shields.io/badge/Prisma-6-2d3748)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6)
+
+</div>
 
 ---
 
+## About
+
+Pricing a configurable product — a carport, a solar install, a custom fit-out — usually means a
+spreadsheet, a PDF, and a sales rep who is the only one who really understands the formula. This
+engine turns that logic into data: a **domain** holds a set of **fields** (inputs, formulas,
+outputs), a **rule engine** that resolves them, **validations**, and **components** that map the
+result onto priced articles. Sales staff get a guided configurator; admins get a visual editor;
+external systems get a REST endpoint that runs the exact same engine.
+
+> **Note on provenance.** This is a sanitised, self-contained extract of a quoting/pricing
+> platform built for both B2B and B2C clients across several trades. Client branding, real
+> pricing data and production configuration have been removed and replaced with a neutral
+> identity and a generated demo domain (a carport configurator). The architecture, the rules
+> engine and the service layer are the real thing — one codebase, deployed as an isolated
+> `docker compose` stack per customer.
+
+## Screenshots
+
+|  |  |
+|:--:|:--:|
+| ![Login](docs/screenshots/login.jpg) | ![Dashboard](docs/screenshots/dashboard.jpg) |
+| **Login** | **Dashboard** — domains, price lists, and API activity at a glance |
+| ![Fields](docs/screenshots/fields.jpg) | ![Rules](docs/screenshots/rules.jpg) |
+| **Felder** — define input, formula, and output fields per domain | **Regelwerk** — visual if/then rules resolving an output field |
+| ![Simulator](docs/screenshots/simulator.jpg) | ![Pricelist](docs/screenshots/pricelist.jpg) |
+| **Live-Simulator** — test a configuration in the browser, no quote created | **Preisliste** — articles priced against engine components |
+
+<div align="center">
+<img src="docs/screenshots/configurator.jpg" alt="Sales configurator" width="70%">
+<br><em><strong>Konfigurator</strong> — the sales-facing form, with a live offer preview as fields change</em>
+</div>
+
 ## Features
 
-- **Domains** — self-contained configuration areas (e.g. photovoltaics, windows, roofing)
+- **Domains** — self-contained configuration areas (e.g. photovoltaics, carports, roofing)
 - **Fields** — numbers, text, dropdowns, booleans, formula fields, and output fields
 - **Rules engine** — condition-based value assignment with AND/OR logic, plus a full execution **trace** for every run
 - **Validations** — field-level error and warning rules, including field-to-field comparisons
@@ -34,7 +77,7 @@ A configurable quoting and calculation engine built with Next.js. Define fields,
 | Styling | Tailwind CSS v4 + shadcn-style components (Radix UI) |
 | Forms / validation | react-hook-form + zod v4 |
 | Charts | Recharts |
-| Tests | Vitest 4 (node environment) |
+| Tests | Vitest 4 (node environment) — 54 tests across the engine and service layer |
 
 ---
 
@@ -51,7 +94,7 @@ A configurable quoting and calculation engine built with Next.js. Define fields,
 ### 1. Clone the repository
 
 ```bash
-git clone <repo-url>
+git clone git@github.com:blackburn2601/angebots-engine.git
 cd angebots-engine
 ```
 
@@ -138,6 +181,33 @@ Open [http://localhost:3000](http://localhost:3000) and log in with the credenti
 
 `predev`, `prebuild`, and `postinstall` regenerate the developer docs automatically;
 `pretest` hooks start the test database.
+
+---
+
+## Points of interest
+
+If you are reading the code to judge it, these are the parts worth your time:
+
+- **[`src/lib/engine.ts`](src/lib/engine.ts)** — the core engine. A pure function with zero
+  framework imports: multi-pass fixed-point resolution of output fields, a formula evaluator
+  sandboxed through `isSafeFormula` before it ever reaches `new Function()`, then validations,
+  then component activation. It runs unchanged in the browser simulator, on the server, and in
+  tests.
+- **[`isSafeFormula` / `evaluateFormula`](src/lib/engine.ts)** — user-authored formulas are
+  arbitrary strings from a config editor. Before evaluation they're checked against an allowlist
+  (arithmetic and a fixed `Math.*` set) so `new Function()` never sees anything outside that
+  grammar — the actual defence against injecting arbitrary JS through a rule.
+- **Trace types** (top of `engine.ts`) — every rule, condition, formula, and component activation
+  can be captured as structured trace data and persisted (`EngineLog`), so a support engineer can
+  replay exactly why a quote came out the way it did instead of re-deriving it from the config.
+- **[`src/lib/rate-limit.ts`](src/lib/rate-limit.ts)** — IP-based login throttling backed by a
+  `LoginAttempt` table rather than in-memory state, so it survives restarts and works across
+  multiple instances.
+- **[`src/lib/api-key-auth.ts`](src/lib/api-key-auth.ts)** — API keys are bcrypt-hashed at rest;
+  only a display prefix (`eak_live_…`) is kept in plaintext.
+- **[`src/services/`](src/services/)** — the only layer allowed to import Prisma. Worth reading
+  as a set: the same service methods back both the authenticated UI and the external
+  `/api/v1` routes, so the two surfaces can never drift apart.
 
 ---
 
@@ -387,6 +457,7 @@ scripts/
 └── ensure-test-db.mjs       # Starts + migrates the disposable test DB before `npm test`
 docs/
 ├── developer/               # Developer documentation (01 … 12)
+├── screenshots/             # Screenshots used in this README
 ├── architecture-review.md   # Architecture review notes
 └── OBSOLET/                 # Superseded planning documents
 Dockerfile                   # Multi-stage production build (standalone output)
