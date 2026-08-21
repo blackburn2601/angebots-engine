@@ -9,7 +9,7 @@ All API endpoints live under `/api/v1/`. Both the UI and external integrations u
 | Session cookie | Sent automatically by the browser after login |
 | Bearer token | `Authorization: Bearer eak_live_<48-hex-chars>` |
 
-Each request is checked for a session cookie first. If no valid session is found, the `Authorization` header is checked for an API key.
+Each request is checked for an `Authorization: Bearer` header first; if present it is validated as an API key. Otherwise the request falls back to the NextAuth session cookie.
 
 ---
 
@@ -101,7 +101,12 @@ Update name or config. Role: `SUPER_ADMIN` or `DOMAIN_ADMIN`.
 Delete a domain. Role: `SUPER_ADMIN` only.
 
 #### `POST /api/v1/domains/:id/duplicate`
-Create a copy with `(Kopie)` suffix. Role: `SUPER_ADMIN` or `DOMAIN_ADMIN`.
+Create a copy of a domain. Role: `SUPER_ADMIN` or `DOMAIN_ADMIN`.
+
+Optional JSON body to name the copy (1–100 chars); defaults to the source name with a `(Kopie)` suffix when omitted:
+```json
+{ "name": "Custom Name" }
+```
 
 #### `POST /api/v1/domains/:id/run`
 **Run the engine.** The primary integration endpoint.
@@ -150,10 +155,22 @@ Response:
         "artikel_nr": "ART-001"
       }
     ],
-    "validierungen": []
+    "validierungen": [],
+    "trace": {
+      "inputs": { "laenge": 10, "breite": 5, "material": "holz" },
+      "formulas": [ { "feld": "flaeche", "formel": "laenge * breite", "ergebnis": 50 } ],
+      "rule_groups": [ ... ],
+      "freitext_rules": [ ... ],
+      "validations": [ ... ],
+      "components": [ ... ]
+    }
   }
 }
 ```
+
+The response is an `EngineResult` — a `SimulatorResult` plus a `trace` object that records
+every step the engine took (resolved inputs, formula evaluations, rule-group matches,
+freitext rules, validations, and component activations). See [06 · The Engine](./06-engine.md).
 
 ---
 

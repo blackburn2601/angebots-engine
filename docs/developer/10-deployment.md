@@ -47,6 +47,7 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npx prisma generate
 RUN npm run build
+RUN npm run build:seed        # compiles prisma/seed.ts -> dist/seed/seed.js
 ```
 
 Builds the Next.js app. Output goes to `.next/standalone/` (because `output: "standalone"` is set in `next.config.mjs`).
@@ -66,9 +67,11 @@ COPY --from=builder prisma ./prisma             # Migration files
 COPY --from=builder node_modules/.prisma ./node_modules/.prisma     # Prisma binary
 COPY --from=builder node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder node_modules/prisma ./node_modules/prisma
+COPY --from=builder dist/seed/seed.js ./prisma/seed.js            # compiled seeder
+COPY --from=builder node_modules/bcryptjs ./node_modules/bcryptjs # seeder dependency
 ```
 
-The Prisma packages are copied explicitly because the standalone output doesn't bundle them automatically — it only traces regular Node.js imports, not native binary modules.
+The Prisma packages are copied explicitly because the standalone output doesn't bundle them automatically — it only traces regular Node.js imports, not native binary modules. The compiled seeder and `bcryptjs` are copied so the admin user can be created inside the container without `ts-node` (see [First Deployment](#first-deployment--step-by-step)).
 
 ---
 
@@ -150,10 +153,17 @@ This builds the Docker image, starts both containers, waits for Postgres to be h
 ### 4. Seed the initial admin user
 
 ```bash
-docker compose exec app node node_modules/prisma/build/index.js db seed
+docker compose exec app node prisma/seed.js
 ```
 
 > Wait ~30 seconds after first start before seeding so the DB is ready.
+
+**Why not `prisma db seed`?** The `prisma.seed` entry in `package.json` runs `prisma/seed.ts`
+through `ts-node`, and neither `ts-node` nor `typescript` exists in the runtime image. The
+builder stage therefore compiles the seed to plain JavaScript (`npm run build:seed` →
+`dist/seed/seed.js`), which the runner copies to `prisma/seed.js`. `bcryptjs` is copied
+explicitly for the same reason — Next.js bundles it into the server chunks, so it is not part
+of the traced standalone `node_modules`.
 
 ### 5. Verify
 
@@ -239,6 +249,7 @@ Running multiple app containers in parallel works for the Next.js server itself,
 | `NEXTAUTH_URL` | Yes | Public HTTPS URL of the app |
 | `ALLOWED_ORIGIN` | Recommended | Restrict CORS to your frontend domain |
 | `APP_PORT` | No | Defaults to 3000 |
+| `POSTGRES_PORT` | No | Host port Postgres is published on; defaults to `5544` |
 
 ---
 
@@ -270,4 +281,4 @@ Set up automated daily backups with a cron job on the host.
 - [ ] Login works at `https://your-domain.com/login`
 - [ ] At least one Domain created and Engine test with `/api/v1/domains/{id}/run` succeeds
 - [ ] Automated DB backup scheduled
-- [ ] Server firewall blocks direct port 5432 access (only Docker internal)
+- [ ] Server firewall blocks the published Postgres port (`POSTGRES_PORT`, default 5544) from outside access — or unpublish it in production if external DB access isn't needed

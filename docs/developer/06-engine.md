@@ -17,7 +17,7 @@ function runEngine(
   config: DomainConfig,
   eingaben: FieldValues,
   preisItems: PreisItem[] = []
-): SimulatorResult
+): EngineResult
 ```
 
 This means the same function runs both in the browser (real-time simulator) and on the server (REST API endpoint).
@@ -48,9 +48,16 @@ A plain `Record<string, unknown>` — the user's input values, keyed by field `k
 { laenge: 5, breite: 4, material: "holz" }
 ```
 
-### Output: `SimulatorResult`
+### Output: `EngineResult`
+
+`runEngine` returns an **`EngineResult`** — a `SimulatorResult` plus a structured `trace`
+of everything the engine did (defined in `src/lib/engine.ts`):
 
 ```typescript
+interface EngineResult extends SimulatorResult {
+  trace: EngineTrace;
+}
+
 interface SimulatorResult {
   values: FieldValues;                  // All field values (inputs + computed)
   firedRules: Array<{
@@ -70,6 +77,29 @@ interface SimulatorResult {
   }>;
 }
 ```
+
+### The execution trace: `EngineTrace`
+
+`trace` records each step the engine took, useful for debugging configurations and for the
+in-app simulator's "why did this happen?" view. It mirrors the four engine stages:
+
+```typescript
+interface EngineTrace {
+  inputs: FieldValues;             // resolved input values
+  formulas: TraceFormula[];        // each formula field + evaluated result
+  rule_groups: TraceRuleGroup[];   // output-rule groups, their conditions and match outcome
+  freitext_rules: TraceFreitext[]; // freitext hints and whether they activated
+  validations: TraceValidation[];  // each validation, its condition tree and pass/fail
+  components: TraceComponent[];    // component activation, chosen variant, quantity
+}
+```
+
+The supporting types (`TraceCondition`, `TraceRule`, `TraceRuleGroup`, `TraceFormula`,
+`TraceFreitext`, `TraceValidation`, `TraceComponent`) are all exported from `src/lib/engine.ts`.
+
+> **Note:** the result's `trace` is computed in-memory and returned to the caller. There is an
+> `EngineLog` table in the schema intended to persist runs, but no code writes to it yet —
+> see [04 · Database](./04-database.md).
 
 ---
 
@@ -269,7 +299,8 @@ Response:
     "firedRules": [{ "ziel_feld": "tarif", "dann": "standard", "regelIndex": 0 }],
     "activeFreitext": [],
     "activeKomponenten": [...],
-    "validierungen": []
+    "validierungen": [],
+    "trace": { "inputs": {...}, "formulas": [...], "rule_groups": [...], "freitext_rules": [...], "validations": [...], "components": [...] }
   }
 }
 ```

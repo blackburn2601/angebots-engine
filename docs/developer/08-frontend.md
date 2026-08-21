@@ -31,7 +31,7 @@ domains/[id]/fields/
 └── fields-editor.tsx   (Client Component — "use client")
     - receives initialConfig as prop
     - manages state locally
-    - calls /api/... to save changes
+    - calls /api/v1/... to save changes
 ```
 
 This keeps data fetching on the server (fast, no API round-trip) and interactivity on the client.
@@ -185,7 +185,7 @@ The domain editor pages (fields, rules, components, validations, form layout) ar
 async function save() {
   setSaving(true);
   try {
-    const res = await fetch(`/api/domains/${domainId}`, {
+    const res = await fetch(`/api/v1/domains/${domainId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ config_json: JSON.stringify(config) }),

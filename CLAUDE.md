@@ -15,7 +15,7 @@ A Next.js 16 (App Router) application for building configurable pricing/offer do
 | Layer | Technology |
 |---|---|
 | Framework | Next.js 16 (App Router, React 18, TypeScript) |
-| Database | PostgreSQL 16 via Prisma 5 ORM |
+| Database | PostgreSQL 16 via Prisma 6 ORM |
 | Auth | NextAuth v5 (beta) — JWT sessions, Credentials provider |
 | UI | Tailwind CSS v4, Radix UI, shadcn-style components |
 | Forms | react-hook-form + zod v4 |
@@ -101,7 +101,9 @@ Accepts `{ inputs: Record<string,unknown>, preis_items?: PreisItem[] }`, returns
 /api/v1/dashboard/stats   GET
 ```
 
-Legacy routes without versioning exist under `/api/` (non-v1) — prefer v1 for new work.
+All resource routes live under `/api/v1/**` — a single surface used by both the UI
+(session cookie) and external clients (Bearer key). The only non-versioned route is the
+NextAuth handler at `/api/auth/**`. (Earlier unversioned "internal" routes were removed.)
 
 ---
 
@@ -162,7 +164,6 @@ Login rate-limiting: 5 failed attempts per IP per 15 min (`src/lib/rate-limit.ts
 | `/admin/users` | User management |
 | `/admin/logs` | API log viewer |
 | `/admin/webhooks` | Webhook URL management |
-| `/admin/config` | App settings viewer |
 | `/settings/profile` | User profile |
 | `/docs` | API docs |
 
@@ -176,7 +177,7 @@ docker compose up -d
 
 # 2. Copy env and set DATABASE_URL to postgres (not SQLite)
 cp .env.example .env
-# DATABASE_URL="postgresql://angebots:secret@localhost:5432/angebots_engine"
+# DATABASE_URL="postgresql://angebots:secret@localhost:5544/angebots_engine"
 
 # 3. Run migrations and seed
 npm run db:migrate

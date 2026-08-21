@@ -100,7 +100,7 @@ Tracks login attempts per IP address. Used by the rate limiter to block brute-fo
 Stores webhook endpoint URLs. The application does not fire them automatically yet — this is a configuration table for future webhook dispatch.
 
 ### `AppSetting`
-Key-value store for application settings, editable via the Admin → Config page.
+Key-value store for application runtime settings.
 
 | Column | Type | Notes |
 |---|---|---|
@@ -108,6 +108,26 @@ Key-value store for application settings, editable via the Admin → Config page
 | `value` | String | Setting value |
 | `updated_at` | DateTime | Auto-updated |
 | `updated_by` | String? | User ID of last editor |
+
+### `EngineLog`
+Intended to persist a record of each engine run (inputs, outputs, and the full execution trace). Added by migration `20260609091831_add_engine_log`.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | String | `cuid()` primary key |
+| `domain_id` | String | Domain the run belongs to |
+| `domain_name` | String | Denormalized domain name |
+| `inputs` | String | JSON of the engine inputs |
+| `outputs` | String | JSON of the engine outputs |
+| `trace` | String | JSON of the `EngineTrace` |
+| `duration_ms` | Int? | Run duration in milliseconds |
+| `created_at` | DateTime | Defaults to now |
+
+Indexed on `(domain_id, created_at)` and `(created_at)`.
+
+> **Status:** the table exists in the schema, but no application code writes to it yet —
+> `EngineService.run` currently returns the result (including its in-memory `trace`) without
+> persisting an `EngineLog` row. Wiring up persistence is a future step.
 
 ---
 

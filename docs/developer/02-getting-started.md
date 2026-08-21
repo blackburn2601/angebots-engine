@@ -4,8 +4,8 @@
 
 | Tool | Minimum version | Check |
 |---|---|---|
-| Node.js | 20.x | `node --version` |
-| npm | 10.x | `npm --version` |
+| Node.js | 26.x (CI builds on Node 26) | `node --version` |
+| npm | 11.x | `npm --version` |
 | Docker + Docker Compose | Docker 24+ | `docker --version` |
 | Git | any | `git --version` |
 
@@ -21,7 +21,7 @@ cd angebots-engine
 npm install
 ```
 
-`npm install` automatically runs `prisma generate` (via the `postinstall` script), which generates the typed Prisma client from `prisma/schema.prisma`.
+`npm install` automatically runs the `postinstall` script (`prisma generate && node scripts/gen-developer-docs.mjs`), which generates the typed Prisma client from `prisma/schema.prisma` and bundles these developer docs for the in-app `/docs/developer` viewer.
 
 ---
 
@@ -36,10 +36,15 @@ cp .env.example .env
 The defaults in `.env.example` work for local development as-is. Key variables:
 
 ```env
-DATABASE_URL="postgresql://angebots:secret@localhost:5432/angebots_engine"
+DATABASE_URL="postgresql://angebots:secret@localhost:5544/angebots_engine"
 NEXTAUTH_SECRET="change-me-min-32-chars-random-string"
 NEXTAUTH_URL="http://localhost:3000"
+POSTGRES_PORT=5544
 ```
+
+> The dev database is published on host port **5544** (not the default 5432) to avoid clashing
+> with other local Postgres instances and the test DB (which uses 5433). `POSTGRES_PORT` sets the
+> host port `docker-compose.yml` maps to the container's 5432 — keep it in sync with `DATABASE_URL`.
 
 `NEXTAUTH_SECRET` must be at least 32 characters. In dev any string works; in production generate a real one:
 
@@ -156,6 +161,7 @@ Opens at `http://localhost:5555`. Shows all tables, lets you view/edit/delete ro
 | `SEED_ADMIN_EMAIL` | Seed only | Email for the seeded admin user |
 | `SEED_ADMIN_PASSWORD` | Seed only | Password for the seeded admin user |
 | `SEED_ADMIN_NAME` | Seed only | Display name for the seeded admin user |
+| `POSTGRES_PORT` | No | Host port Postgres is published on (default `5544`); must match `DATABASE_URL` |
 | `APP_PORT` | Docker only | Port exposed by the Docker container |
 | `POSTGRES_USER` | Docker only | Postgres username |
 | `POSTGRES_PASSWORD` | Docker only | Postgres password |

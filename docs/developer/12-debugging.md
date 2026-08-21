@@ -4,7 +4,7 @@
 
 ### Infinite page reload / FATAL Turbopack error
 
-**Symptom:** Pages like `/admin/config` or `/domains` keep reloading. Terminal shows:
+**Symptom:** Pages like `/admin/users` or `/domains` keep reloading. Terminal shows:
 
 ```
 FATAL: An unexpected Turbopack error occurred.
@@ -41,10 +41,10 @@ pkill -f "next dev"
 ### Prisma: "Can't reach database server"
 
 ```
-Error: Can't reach database server at `localhost:5432`
+Error: Can't reach database server at `localhost:5544`
 ```
 
-The PostgreSQL container is not running.
+The PostgreSQL container is not running (the dev DB is published on host port `5544`).
 
 ```bash
 docker compose up -d postgres
@@ -174,7 +174,7 @@ All `/api/v1/*` calls are logged to the `ApiLog` table. View them:
 Use curl or an HTTP client like Bruno/Postman/Insomnia.
 
 ```bash
-# Get a session cookie first (for internal API):
+# Get a session cookie first (cookie auth — same as the browser UI):
 curl -c cookies.txt -X POST http://localhost:3000/api/auth/callback/credentials \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "email=admin@example.com&password=Admin123!"
@@ -246,7 +246,7 @@ docker compose up --build -d
 Next.js logs matched routes in the terminal. Look for lines like:
 
 ```
-GET /admin/config 200 in 45ms
+GET /admin/users 200 in 45ms
 ```
 
 If you see repeated 200s for the same route with no user interaction → the page is reloading itself (likely the Turbopack bug — make sure `--webpack` is in the dev script).
