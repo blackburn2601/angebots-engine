@@ -458,8 +458,7 @@ scripts/
 docs/
 ├── developer/               # Developer documentation (01 … 12)
 ├── screenshots/             # Screenshots used in this README
-├── architecture-review.md   # Architecture review notes
-└── OBSOLET/                 # Superseded planning documents
+└── architecture-review.md   # Architecture review notes
 Dockerfile                   # Multi-stage production build (standalone output)
 docker-compose.yml           # App + PostgreSQL 16 (one stack per customer)
 docker-compose.test.yml      # Disposable test database (port 5433, tmpfs)

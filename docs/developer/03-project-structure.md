@@ -17,8 +17,7 @@ angebots-engine/
 │   └── migrations/         Auto-generated migration SQL files
 ├── public/                 Static assets served at /
 ├── docs/
-│   ├── developer/          THIS documentation
-│   └── OBSOLET/            Old migration planning docs (ignore)
+│   └── developer/          THIS documentation
 ├── .github/workflows/      GitHub Actions CI pipeline
 ├── Dockerfile              Multi-stage Docker build
 ├── docker-compose.yml      Local + production Docker setup
